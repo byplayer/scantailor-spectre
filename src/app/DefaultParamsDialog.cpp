@@ -1128,6 +1128,18 @@ void DefaultParamsDialog::commitChanges() {
   } else {
     params = buildParams();
   }
+
+  // "Custom" is not in the profile list, so nothing else ever writes it out.
+  // Without a file of its own, DefaultParamsProvider fails to read it back on
+  // the next launch and silently falls back to "Default", losing the values
+  // the user just confirmed. The profile list skips reserved names, so the
+  // file does not show up as a second entry in the combo box.
+  if ((profile == "Custom") && !m_profileManager.writeProfile(*params, profile)) {
+    QMessageBox::warning(this, tr("Error"),
+                         tr("Could not save the custom parameters. They apply to this session, but the profile "
+                            "will be back to Default the next time ScanTailor starts."));
+  }
+
   DefaultParamsProvider::getInstance().setParams(std::move(params), profile);
   ApplicationSettings::getInstance().setCurrentProfile(profile);
 }

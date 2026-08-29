@@ -12,11 +12,13 @@
 #include <filters/output/PictureShapeOptions.h>
 #include <filters/page_layout/Alignment.h>
 #include <filters/page_split/LayoutType.h>
+#include <filters/finalize/Settings.h>
 
 #include <QtCore/QRectF>
 
 #include "AutoManualMode.h"
 #include "Dpi.h"
+#include "PdfExporter.h"
 #include "Margins.h"
 #include "OrthogonalRotation.h"
 #include "Units.h"
@@ -111,9 +113,47 @@ class DefaultParams {
 
     void setPageDetectMode(AutoManualMode pageDetectMode);
 
+    double getContentFillFactor() const;
+
+    void setContentFillFactor(double contentFillFactor);
+
+    int getBorderTolerance() const;
+
+    void setBorderTolerance(int borderTolerance);
+
    private:
     QSizeF m_pageRectSize;
     bool m_contentDetectEnabled;
+    AutoManualMode m_pageDetectMode;
+    bool m_fineTuneCorners;
+    double m_contentFillFactor;
+    int m_borderTolerance;
+  };
+
+  class PageBoxParams {
+   public:
+    PageBoxParams();
+
+    PageBoxParams(const QSizeF& pageRectSize, AutoManualMode pageDetectMode, bool fineTuneCorners);
+
+    explicit PageBoxParams(const QDomElement& el);
+
+    QDomElement toXml(QDomDocument& doc, const QString& name) const;
+
+    const QSizeF& getPageRectSize() const;
+
+    void setPageRectSize(const QSizeF& pageRectSize);
+
+    AutoManualMode getPageDetectMode() const;
+
+    void setPageDetectMode(AutoManualMode pageDetectMode);
+
+    bool isFineTuneCorners() const;
+
+    void setFineTuneCorners(bool fineTuneCorners);
+
+   private:
+    QSizeF m_pageRectSize;
     AutoManualMode m_pageDetectMode;
     bool m_fineTuneCorners;
   };
@@ -190,6 +230,10 @@ class DefaultParams {
 
     void setDespeckleLevel(double despeckleLevel);
 
+    bool isPassThroughEnabled() const;
+
+    void setPassThroughEnabled(bool enabled);
+
    private:
     Dpi m_dpi;
     output::ColorParams m_colorParams;
@@ -198,6 +242,110 @@ class DefaultParams {
     output::DepthPerception m_depthPerception;
     output::DewarpingOptions m_dewarpingOptions;
     double m_despeckleLevel;
+    bool m_passThrough;
+  };
+
+  class FinalizeParams {
+   public:
+    FinalizeParams();
+
+    explicit FinalizeParams(const QDomElement& el);
+
+    QDomElement toXml(QDomDocument& doc, const QString& name) const;
+
+    finalize::AutoColorModePolicy getAutoColorModePolicy() const;
+
+    void setAutoColorModePolicy(finalize::AutoColorModePolicy policy);
+
+    bool isAutoWhiteBalanceEnabled() const;
+
+    void setAutoWhiteBalanceEnabled(bool enabled);
+
+    int getMidtoneThreshold() const;
+
+    void setMidtoneThreshold(int threshold);
+
+    finalize::OutputFormat getOutputFormat() const;
+
+    void setOutputFormat(finalize::OutputFormat format);
+
+    finalize::TiffCompression getTiffCompression() const;
+
+    void setTiffCompression(finalize::TiffCompression compression);
+
+    int getJpegQuality() const;
+
+    void setJpegQuality(int quality);
+
+   private:
+    finalize::AutoColorModePolicy m_autoColorModePolicy;
+    bool m_autoWhiteBalance;
+    int m_midtoneThreshold;
+    finalize::OutputFormat m_outputFormat;
+    finalize::TiffCompression m_tiffCompression;
+    int m_jpegQuality;
+  };
+
+  class OcrParams {
+   public:
+    OcrParams();
+
+    explicit OcrParams(const QDomElement& el);
+
+    QDomElement toXml(QDomDocument& doc, const QString& name) const;
+
+    bool isOcrEnabled() const;
+
+    void setOcrEnabled(bool enabled);
+
+    const QString& getLanguage() const;
+
+    void setLanguage(const QString& language);
+
+    bool isAccurateRecognitionEnabled() const;
+
+    void setAccurateRecognitionEnabled(bool enabled);
+
+    bool isLanguageCorrectionEnabled() const;
+
+    void setLanguageCorrectionEnabled(bool enabled);
+
+   private:
+    bool m_ocrEnabled;
+    QString m_language;
+    bool m_accurateRecognition;
+    bool m_languageCorrection;
+  };
+
+  class ExportParams {
+   public:
+    ExportParams();
+
+    explicit ExportParams(const QDomElement& el);
+
+    QDomElement toXml(QDomDocument& doc, const QString& name) const;
+
+    bool isDpiLimitDisabled() const;
+
+    void setDpiLimitDisabled(bool disabled);
+
+    int getMaxDpi() const;
+
+    void setMaxDpi(int dpi);
+
+    bool isGrayscaleCompressionEnabled() const;
+
+    void setGrayscaleCompressionEnabled(bool enabled);
+
+    PdfExporter::Quality getQuality() const;
+
+    void setQuality(PdfExporter::Quality quality);
+
+   private:
+    bool m_noDpiLimit;
+    int m_maxDpi;
+    bool m_compressGrayscale;
+    PdfExporter::Quality m_quality;
   };
 
  public:
@@ -206,9 +354,13 @@ class DefaultParams {
   DefaultParams(const FixOrientationParams& fixOrientationParams,
                 const DeskewParams& deskewParams,
                 const PageSplitParams& pageSplitParams,
+                const PageBoxParams& pageBoxParams,
                 const SelectContentParams& selectContentParams,
                 const PageLayoutParams& pageLayoutParams,
-                const OutputParams& outputParams);
+                const FinalizeParams& finalizeParams,
+                const OutputParams& outputParams,
+                const OcrParams& ocrParams,
+                const ExportParams& exportParams);
 
   explicit DefaultParams(const QDomElement& el);
 
@@ -238,6 +390,22 @@ class DefaultParams {
 
   void setOutputParams(const OutputParams& outputParams);
 
+  const PageBoxParams& getPageBoxParams() const;
+
+  void setPageBoxParams(const PageBoxParams& pageBoxParams);
+
+  const FinalizeParams& getFinalizeParams() const;
+
+  void setFinalizeParams(const FinalizeParams& finalizeParams);
+
+  const OcrParams& getOcrParams() const;
+
+  void setOcrParams(const OcrParams& ocrParams);
+
+  const ExportParams& getExportParams() const;
+
+  void setExportParams(const ExportParams& exportParams);
+
   Units getUnits() const;
 
   void setUnits(Units units);
@@ -246,9 +414,13 @@ class DefaultParams {
   FixOrientationParams m_fixOrientationParams;
   DeskewParams m_deskewParams;
   PageSplitParams m_pageSplitParams;
+  PageBoxParams m_pageBoxParams;
   SelectContentParams m_selectContentParams;
   PageLayoutParams m_pageLayoutParams;
+  FinalizeParams m_finalizeParams;
   OutputParams m_outputParams;
+  OcrParams m_ocrParams;
+  ExportParams m_exportParams;
   Units m_units;
 };
 
@@ -452,6 +624,198 @@ inline double DefaultParams::OutputParams::getDespeckleLevel() const {
 
 inline void DefaultParams::OutputParams::setDespeckleLevel(double despeckleLevel) {
   OutputParams::m_despeckleLevel = despeckleLevel;
+}
+
+inline bool DefaultParams::OutputParams::isPassThroughEnabled() const {
+  return m_passThrough;
+}
+
+inline void DefaultParams::OutputParams::setPassThroughEnabled(bool enabled) {
+  OutputParams::m_passThrough = enabled;
+}
+
+inline double DefaultParams::SelectContentParams::getContentFillFactor() const {
+  return m_contentFillFactor;
+}
+
+inline void DefaultParams::SelectContentParams::setContentFillFactor(double contentFillFactor) {
+  SelectContentParams::m_contentFillFactor = contentFillFactor;
+}
+
+inline int DefaultParams::SelectContentParams::getBorderTolerance() const {
+  return m_borderTolerance;
+}
+
+inline void DefaultParams::SelectContentParams::setBorderTolerance(int borderTolerance) {
+  SelectContentParams::m_borderTolerance = borderTolerance;
+}
+
+inline const DefaultParams::PageBoxParams& DefaultParams::getPageBoxParams() const {
+  return m_pageBoxParams;
+}
+
+inline void DefaultParams::setPageBoxParams(const DefaultParams::PageBoxParams& pageBoxParams) {
+  DefaultParams::m_pageBoxParams = pageBoxParams;
+}
+
+inline const DefaultParams::FinalizeParams& DefaultParams::getFinalizeParams() const {
+  return m_finalizeParams;
+}
+
+inline void DefaultParams::setFinalizeParams(const DefaultParams::FinalizeParams& finalizeParams) {
+  DefaultParams::m_finalizeParams = finalizeParams;
+}
+
+inline const DefaultParams::OcrParams& DefaultParams::getOcrParams() const {
+  return m_ocrParams;
+}
+
+inline void DefaultParams::setOcrParams(const DefaultParams::OcrParams& ocrParams) {
+  DefaultParams::m_ocrParams = ocrParams;
+}
+
+inline const DefaultParams::ExportParams& DefaultParams::getExportParams() const {
+  return m_exportParams;
+}
+
+inline void DefaultParams::setExportParams(const DefaultParams::ExportParams& exportParams) {
+  DefaultParams::m_exportParams = exportParams;
+}
+
+inline const QSizeF& DefaultParams::PageBoxParams::getPageRectSize() const {
+  return m_pageRectSize;
+}
+
+inline void DefaultParams::PageBoxParams::setPageRectSize(const QSizeF& pageRectSize) {
+  PageBoxParams::m_pageRectSize = pageRectSize;
+}
+
+inline AutoManualMode DefaultParams::PageBoxParams::getPageDetectMode() const {
+  return m_pageDetectMode;
+}
+
+inline void DefaultParams::PageBoxParams::setPageDetectMode(AutoManualMode pageDetectMode) {
+  PageBoxParams::m_pageDetectMode = pageDetectMode;
+}
+
+inline bool DefaultParams::PageBoxParams::isFineTuneCorners() const {
+  return m_fineTuneCorners;
+}
+
+inline void DefaultParams::PageBoxParams::setFineTuneCorners(bool fineTuneCorners) {
+  PageBoxParams::m_fineTuneCorners = fineTuneCorners;
+}
+
+inline finalize::AutoColorModePolicy DefaultParams::FinalizeParams::getAutoColorModePolicy() const {
+  return m_autoColorModePolicy;
+}
+
+inline void DefaultParams::FinalizeParams::setAutoColorModePolicy(finalize::AutoColorModePolicy policy) {
+  FinalizeParams::m_autoColorModePolicy = policy;
+}
+
+inline bool DefaultParams::FinalizeParams::isAutoWhiteBalanceEnabled() const {
+  return m_autoWhiteBalance;
+}
+
+inline void DefaultParams::FinalizeParams::setAutoWhiteBalanceEnabled(bool enabled) {
+  FinalizeParams::m_autoWhiteBalance = enabled;
+}
+
+inline int DefaultParams::FinalizeParams::getMidtoneThreshold() const {
+  return m_midtoneThreshold;
+}
+
+inline void DefaultParams::FinalizeParams::setMidtoneThreshold(int threshold) {
+  FinalizeParams::m_midtoneThreshold = threshold;
+}
+
+inline finalize::OutputFormat DefaultParams::FinalizeParams::getOutputFormat() const {
+  return m_outputFormat;
+}
+
+inline void DefaultParams::FinalizeParams::setOutputFormat(finalize::OutputFormat format) {
+  FinalizeParams::m_outputFormat = format;
+}
+
+inline finalize::TiffCompression DefaultParams::FinalizeParams::getTiffCompression() const {
+  return m_tiffCompression;
+}
+
+inline void DefaultParams::FinalizeParams::setTiffCompression(finalize::TiffCompression compression) {
+  FinalizeParams::m_tiffCompression = compression;
+}
+
+inline int DefaultParams::FinalizeParams::getJpegQuality() const {
+  return m_jpegQuality;
+}
+
+inline void DefaultParams::FinalizeParams::setJpegQuality(int quality) {
+  FinalizeParams::m_jpegQuality = quality;
+}
+
+inline bool DefaultParams::OcrParams::isOcrEnabled() const {
+  return m_ocrEnabled;
+}
+
+inline void DefaultParams::OcrParams::setOcrEnabled(bool enabled) {
+  OcrParams::m_ocrEnabled = enabled;
+}
+
+inline const QString& DefaultParams::OcrParams::getLanguage() const {
+  return m_language;
+}
+
+inline void DefaultParams::OcrParams::setLanguage(const QString& language) {
+  OcrParams::m_language = language;
+}
+
+inline bool DefaultParams::OcrParams::isAccurateRecognitionEnabled() const {
+  return m_accurateRecognition;
+}
+
+inline void DefaultParams::OcrParams::setAccurateRecognitionEnabled(bool enabled) {
+  OcrParams::m_accurateRecognition = enabled;
+}
+
+inline bool DefaultParams::OcrParams::isLanguageCorrectionEnabled() const {
+  return m_languageCorrection;
+}
+
+inline void DefaultParams::OcrParams::setLanguageCorrectionEnabled(bool enabled) {
+  OcrParams::m_languageCorrection = enabled;
+}
+
+inline bool DefaultParams::ExportParams::isDpiLimitDisabled() const {
+  return m_noDpiLimit;
+}
+
+inline void DefaultParams::ExportParams::setDpiLimitDisabled(bool disabled) {
+  ExportParams::m_noDpiLimit = disabled;
+}
+
+inline int DefaultParams::ExportParams::getMaxDpi() const {
+  return m_maxDpi;
+}
+
+inline void DefaultParams::ExportParams::setMaxDpi(int dpi) {
+  ExportParams::m_maxDpi = dpi;
+}
+
+inline bool DefaultParams::ExportParams::isGrayscaleCompressionEnabled() const {
+  return m_compressGrayscale;
+}
+
+inline void DefaultParams::ExportParams::setGrayscaleCompressionEnabled(bool enabled) {
+  ExportParams::m_compressGrayscale = enabled;
+}
+
+inline PdfExporter::Quality DefaultParams::ExportParams::getQuality() const {
+  return m_quality;
+}
+
+inline void DefaultParams::ExportParams::setQuality(PdfExporter::Quality quality) {
+  ExportParams::m_quality = quality;
 }
 
 

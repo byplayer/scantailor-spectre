@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>657</width>
-    <height>555</height>
+    <width>720</width>
+    <height>700</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -105,6 +105,16 @@
       </widget>
      </item>
     </layout>
+   </item>
+   <item>
+    <widget class="QLabel" name="profileHintLabel">
+     <property name="text">
+      <string>Default and Source are built-in presets and cannot be edited. Pick Custom to change these values, or type a name and press Save to keep them as a profile of your own.</string>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+    </widget>
    </item>
    <item>
     <widget class="QTabWidget" name="tabWidget">
@@ -783,6 +793,216 @@
        </item>
       </layout>
      </widget>
+     <widget class="QWidget" name="tabPageBox">
+      <attribute name="title">
+       <string>Page Box</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_pageBox">
+       <item>
+        <widget class="QScrollArea" name="scrollArea_pageBox">
+         <property name="widgetResizable">
+          <bool>true</bool>
+         </property>
+         <widget class="QWidget" name="scrollAreaWidgetContents_pageBox">
+          <layout class="QVBoxLayout" name="contentsLayout_pageBox">
+           <item>
+            <widget class="QGroupBox" name="groupBox_5">
+                         <property name="title">
+                          <string>Page Box</string>
+                         </property>
+                         <property name="alignment">
+                          <set>Qt::AlignCenter</set>
+                         </property>
+                         <layout class="QGridLayout" name="gridLayout_5">
+                          <item row="0" column="0" colspan="2">
+                           <widget class="QPushButton" name="pageDetectDisableBtn">
+                            <property name="text">
+                             <string>Disable</string>
+                            </property>
+                            <property name="checkable">
+                             <bool>true</bool>
+                            </property>
+                            <property name="checked">
+                             <bool>true</bool>
+                            </property>
+                            <property name="autoExclusive">
+                             <bool>true</bool>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="2" column="0" colspan="2">
+                           <widget class="QGroupBox" name="pageDetectOptions">
+                            <property name="title">
+                             <string>Options</string>
+                            </property>
+                            <layout class="QVBoxLayout" name="verticalLayout_11">
+                             <property name="spacing">
+                              <number>4</number>
+                             </property>
+                             <property name="leftMargin">
+                              <number>9</number>
+                             </property>
+                             <property name="topMargin">
+                              <number>9</number>
+                             </property>
+                             <property name="rightMargin">
+                              <number>9</number>
+                             </property>
+                             <property name="bottomMargin">
+                              <number>9</number>
+                             </property>
+                             <item>
+                              <widget class="QCheckBox" name="fineTuneBtn">
+                               <property name="toolTip">
+                                <string>Shift with corners while they are in black. </string>
+                               </property>
+                               <property name="text">
+                                <string>Fine Tune Page Corners</string>
+                               </property>
+                              </widget>
+                             </item>
+                             <item>
+                              <widget class="QWidget" name="dimensionsWidget" native="true">
+                               <layout class="QHBoxLayout" name="horizontalLayout_4">
+                                <property name="leftMargin">
+                                 <number>0</number>
+                                </property>
+                                <property name="topMargin">
+                                 <number>0</number>
+                                </property>
+                                <property name="rightMargin">
+                                 <number>0</number>
+                                </property>
+                                <property name="bottomMargin">
+                                 <number>0</number>
+                                </property>
+                                <item>
+                                 <spacer name="horizontalSpacer_11">
+                                  <property name="orientation">
+                                   <enum>Qt::Horizontal</enum>
+                                  </property>
+                                  <property name="sizeHint" stdset="0">
+                                   <size>
+                                    <width>1</width>
+                                    <height>1</height>
+                                   </size>
+                                  </property>
+                                 </spacer>
+                                </item>
+                                <item>
+                                 <layout class="QGridLayout" name="gridLayout_6">
+                                  <item row="0" column="0">
+                                   <widget class="QLabel" name="label">
+                                    <property name="text">
+                                     <string>Width</string>
+                                    </property>
+                                   </widget>
+                                  </item>
+                                  <item row="1" column="0">
+                                   <widget class="QLabel" name="label_2">
+                                    <property name="text">
+                                     <string>Height</string>
+                                    </property>
+                                   </widget>
+                                  </item>
+                                  <item row="1" column="1">
+                                   <widget class="QDoubleSpinBox" name="heightSpinBox">
+                                    <property name="decimals">
+                                     <number>1</number>
+                                    </property>
+                                    <property name="minimum">
+                                     <double>0.100000000000000</double>
+                                    </property>
+                                    <property name="maximum">
+                                     <double>99999.000000000000000</double>
+                                    </property>
+                                   </widget>
+                                  </item>
+                                  <item row="0" column="1">
+                                   <widget class="QDoubleSpinBox" name="widthSpinBox">
+                                    <property name="decimals">
+                                     <number>1</number>
+                                    </property>
+                                    <property name="minimum">
+                                     <double>0.100000000000000</double>
+                                    </property>
+                                    <property name="maximum">
+                                     <double>99999.000000000000000</double>
+                                    </property>
+                                   </widget>
+                                  </item>
+                                 </layout>
+                                </item>
+                                <item>
+                                 <spacer name="horizontalSpacer_12">
+                                  <property name="orientation">
+                                   <enum>Qt::Horizontal</enum>
+                                  </property>
+                                  <property name="sizeHint" stdset="0">
+                                   <size>
+                                    <width>1</width>
+                                    <height>1</height>
+                                   </size>
+                                  </property>
+                                 </spacer>
+                                </item>
+                               </layout>
+                              </widget>
+                             </item>
+                            </layout>
+                           </widget>
+                          </item>
+                          <item row="1" column="0">
+                           <widget class="QPushButton" name="pageDetectAutoBtn">
+                            <property name="text">
+                             <string>Auto</string>
+                            </property>
+                            <property name="checkable">
+                             <bool>true</bool>
+                            </property>
+                            <property name="autoExclusive">
+                             <bool>true</bool>
+                            </property>
+                           </widget>
+                          </item>
+                          <item row="1" column="1">
+                           <widget class="QPushButton" name="pageDetectManualBtn">
+                            <property name="text">
+                             <string>Manual</string>
+                            </property>
+                            <property name="checkable">
+                             <bool>true</bool>
+                            </property>
+                            <property name="checked">
+                             <bool>false</bool>
+                            </property>
+                            <property name="autoExclusive">
+                             <bool>true</bool>
+                            </property>
+                           </widget>
+                          </item>
+                         </layout>
+                        </widget>
+           </item>
+           <item>
+            <spacer name="verticalSpacer_pageBox">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>1</width>
+               <height>1</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </widget>
+        </widget>
+       </item>
+      </layout>
+     </widget>
      <widget class="QWidget" name="tab_4">
       <attribute name="title">
        <string>Select Content</string>
@@ -839,185 +1059,6 @@
             </spacer>
            </item>
            <item row="1" column="1">
-            <widget class="QGroupBox" name="groupBox_5">
-             <property name="title">
-              <string>Page Box</string>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignCenter</set>
-             </property>
-             <layout class="QGridLayout" name="gridLayout_5">
-              <item row="0" column="0" colspan="2">
-               <widget class="QPushButton" name="pageDetectDisableBtn">
-                <property name="text">
-                 <string>Disable</string>
-                </property>
-                <property name="checkable">
-                 <bool>true</bool>
-                </property>
-                <property name="checked">
-                 <bool>true</bool>
-                </property>
-                <property name="autoExclusive">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item row="2" column="0" colspan="2">
-               <widget class="QGroupBox" name="pageDetectOptions">
-                <property name="title">
-                 <string>Options</string>
-                </property>
-                <layout class="QVBoxLayout" name="verticalLayout_11">
-                 <property name="spacing">
-                  <number>4</number>
-                 </property>
-                 <property name="leftMargin">
-                  <number>9</number>
-                 </property>
-                 <property name="topMargin">
-                  <number>9</number>
-                 </property>
-                 <property name="rightMargin">
-                  <number>9</number>
-                 </property>
-                 <property name="bottomMargin">
-                  <number>9</number>
-                 </property>
-                 <item>
-                  <widget class="QCheckBox" name="fineTuneBtn">
-                   <property name="toolTip">
-                    <string>Shift with corners while they are in black. </string>
-                   </property>
-                   <property name="text">
-                    <string>Fine Tune Page Corners</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QWidget" name="dimensionsWidget" native="true">
-                   <layout class="QHBoxLayout" name="horizontalLayout_4">
-                    <property name="leftMargin">
-                     <number>0</number>
-                    </property>
-                    <property name="topMargin">
-                     <number>0</number>
-                    </property>
-                    <property name="rightMargin">
-                     <number>0</number>
-                    </property>
-                    <property name="bottomMargin">
-                     <number>0</number>
-                    </property>
-                    <item>
-                     <spacer name="horizontalSpacer_11">
-                      <property name="orientation">
-                       <enum>Qt::Horizontal</enum>
-                      </property>
-                      <property name="sizeHint" stdset="0">
-                       <size>
-                        <width>1</width>
-                        <height>1</height>
-                       </size>
-                      </property>
-                     </spacer>
-                    </item>
-                    <item>
-                     <layout class="QGridLayout" name="gridLayout_6">
-                      <item row="0" column="0">
-                       <widget class="QLabel" name="label">
-                        <property name="text">
-                         <string>Width</string>
-                        </property>
-                       </widget>
-                      </item>
-                      <item row="1" column="0">
-                       <widget class="QLabel" name="label_2">
-                        <property name="text">
-                         <string>Height</string>
-                        </property>
-                       </widget>
-                      </item>
-                      <item row="1" column="1">
-                       <widget class="QDoubleSpinBox" name="heightSpinBox">
-                        <property name="decimals">
-                         <number>1</number>
-                        </property>
-                        <property name="minimum">
-                         <double>0.100000000000000</double>
-                        </property>
-                        <property name="maximum">
-                         <double>99999.000000000000000</double>
-                        </property>
-                       </widget>
-                      </item>
-                      <item row="0" column="1">
-                       <widget class="QDoubleSpinBox" name="widthSpinBox">
-                        <property name="decimals">
-                         <number>1</number>
-                        </property>
-                        <property name="minimum">
-                         <double>0.100000000000000</double>
-                        </property>
-                        <property name="maximum">
-                         <double>99999.000000000000000</double>
-                        </property>
-                       </widget>
-                      </item>
-                     </layout>
-                    </item>
-                    <item>
-                     <spacer name="horizontalSpacer_12">
-                      <property name="orientation">
-                       <enum>Qt::Horizontal</enum>
-                      </property>
-                      <property name="sizeHint" stdset="0">
-                       <size>
-                        <width>1</width>
-                        <height>1</height>
-                       </size>
-                      </property>
-                     </spacer>
-                    </item>
-                   </layout>
-                  </widget>
-                 </item>
-                </layout>
-               </widget>
-              </item>
-              <item row="1" column="0">
-               <widget class="QPushButton" name="pageDetectAutoBtn">
-                <property name="text">
-                 <string>Auto</string>
-                </property>
-                <property name="checkable">
-                 <bool>true</bool>
-                </property>
-                <property name="autoExclusive">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-              <item row="1" column="1">
-               <widget class="QPushButton" name="pageDetectManualBtn">
-                <property name="text">
-                 <string>Manual</string>
-                </property>
-                <property name="checkable">
-                 <bool>true</bool>
-                </property>
-                <property name="checked">
-                 <bool>false</bool>
-                </property>
-                <property name="autoExclusive">
-                 <bool>true</bool>
-                </property>
-               </widget>
-              </item>
-             </layout>
-            </widget>
-           </item>
-           <item row="2" column="1">
             <widget class="QGroupBox" name="groupBox_4">
              <property name="title">
               <string>Content Box</string>
@@ -1052,6 +1093,70 @@
                 </property>
                 <property name="autoExclusive">
                  <bool>true</bool>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QGroupBox" name="contentDetectionTuning">
+             <property name="title">
+              <string>Content Detection</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+             <layout class="QGridLayout" name="gridLayoutContentTuning">
+              <item row="0" column="0">
+               <widget class="QLabel" name="contentFillFactorLabel">
+                <property name="text">
+                 <string>Fill factor</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QDoubleSpinBox" name="contentFillFactorSB">
+                <property name="toolTip">
+                 <string>How densely a region must be filled to be treated as content. Lower values pick up fainter content.</string>
+                </property>
+                <property name="decimals">
+                 <number>2</number>
+                </property>
+                <property name="minimum">
+                 <double>0.000000000000000</double>
+                </property>
+                <property name="maximum">
+                 <double>1.000000000000000</double>
+                </property>
+                <property name="singleStep">
+                 <double>0.010000000000000</double>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="borderToleranceLabel">
+                <property name="text">
+                 <string>Border tolerance</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QSpinBox" name="borderToleranceSB">
+                <property name="toolTip">
+                 <string>How far from the border content may sit before it is trimmed away. 0 trims aggressively, 20 preserves edge content.</string>
+                </property>
+                <property name="suffix">
+                 <string> px</string>
+                </property>
+                <property name="minimum">
+                 <number>0</number>
+                </property>
+                <property name="maximum">
+                 <number>20</number>
+                </property>
+                <property name="singleStep">
+                 <number>1</number>
                 </property>
                </widget>
               </item>
@@ -1843,6 +1948,156 @@ QToolButton:pressed {
        </item>
       </layout>
      </widget>
+     <widget class="QWidget" name="tabFinalize">
+      <attribute name="title">
+       <string>Finalize</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_finalize">
+       <item>
+        <widget class="QScrollArea" name="scrollArea_finalize">
+         <property name="widgetResizable">
+          <bool>true</bool>
+         </property>
+         <widget class="QWidget" name="scrollAreaWidgetContents_finalize">
+          <layout class="QVBoxLayout" name="contentsLayout_finalize">
+           <item>
+            <widget class="QGroupBox" name="finalizeColorGroup">
+             <property name="title">
+              <string>Color Mode</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+             <layout class="QGridLayout" name="gridLayoutFinalizeColor">
+              <item row="0" column="0">
+               <widget class="QLabel" name="finalizeColorPolicyLabel">
+                <property name="text">
+                 <string>Auto color policy</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QComboBox" name="finalizeColorPolicyCB">
+                <property name="toolTip">
+                 <string>Restricts what the automatic color mode detector is allowed to pick.</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0" colspan="2">
+               <widget class="QCheckBox" name="finalizeAutoWhiteBalanceCB">
+                <property name="toolTip">
+                 <string>Corrects the color cast of yellowed paper.</string>
+                </property>
+                <property name="text">
+                 <string>Auto white balance</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QLabel" name="finalizeMidtoneThresholdLabel">
+                <property name="text">
+                 <string>Picture detection sensitivity</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1">
+               <widget class="QSpinBox" name="finalizeMidtoneThresholdSB">
+                <property name="toolTip">
+                 <string>How much localized continuous-tone evidence a page needs before it is treated as containing pictures.</string>
+                </property>
+                <property name="suffix">
+                 <string> %</string>
+                </property>
+                <property name="minimum">
+                 <number>0</number>
+                </property>
+                <property name="maximum">
+                 <number>100</number>
+                </property>
+                <property name="singleStep">
+                 <number>1</number>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
+            <widget class="QGroupBox" name="finalizeOutputGroup">
+             <property name="title">
+              <string>Output File</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+             <layout class="QGridLayout" name="gridLayoutFinalizeOutput">
+              <item row="0" column="0">
+               <widget class="QLabel" name="finalizeOutputFormatLabel">
+                <property name="text">
+                 <string>Format</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QComboBox" name="finalizeOutputFormatCB">
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="finalizeTiffCompressionLabel">
+                <property name="text">
+                 <string>TIFF compression</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QComboBox" name="finalizeTiffCompressionCB">
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QLabel" name="finalizeJpegQualityLabel">
+                <property name="text">
+                 <string>JPEG quality</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="1">
+               <widget class="QSpinBox" name="finalizeJpegQualitySB">
+                <property name="suffix">
+                 <string> %</string>
+                </property>
+                <property name="minimum">
+                 <number>1</number>
+                </property>
+                <property name="maximum">
+                 <number>100</number>
+                </property>
+                <property name="singleStep">
+                 <number>1</number>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
+            <spacer name="verticalSpacer_finalize">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>1</width>
+               <height>1</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </widget>
+        </widget>
+       </item>
+      </layout>
+     </widget>
      <widget class="QWidget" name="tab_6">
       <attribute name="title">
        <string>Output</string>
@@ -1895,7 +2150,7 @@ QToolButton:pressed {
                 <bool>false</bool>
                </property>
                <layout class="QGridLayout" name="gridLayout_13">
-                <item row="1" column="0">
+                <item row="2" column="0">
                  <layout class="QVBoxLayout" name="verticalLayout_16">
                   <item>
                    <widget class="QGroupBox" name="commonOptions">
@@ -1951,6 +2206,16 @@ QToolButton:pressed {
                        <property name="bottomMargin">
                         <number>5</number>
                        </property>
+                       <item>
+                        <widget class="QCheckBox" name="passThroughCheckBox">
+                         <property name="toolTip">
+                          <string>Write the source image out unchanged, skipping the output processing.</string>
+                         </property>
+                         <property name="text">
+                          <string>Pass through</string>
+                         </property>
+                        </widget>
+                       </item>
                        <item>
                         <widget class="QCheckBox" name="fillOffcutCB">
                          <property name="text">
@@ -2570,6 +2835,242 @@ QToolButton:pressed {
                    </widget>
                   </item>
                   <item>
+                   <widget class="QGroupBox" name="wienerOptions">
+                    <property name="title">
+                     <string>Wiener denoiser</string>
+                    </property>
+                    <property name="alignment">
+                     <set>Qt::AlignCenter</set>
+                    </property>
+                    <layout class="QGridLayout" name="gridLayoutWiener">
+                     <item row="0" column="0">
+                      <widget class="QLabel" name="wienerCoefLabel">
+                       <property name="text">
+                        <string>Coefficient</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item row="0" column="1">
+                      <widget class="QDoubleSpinBox" name="wienerCoef">
+                       <property name="toolTip">
+                        <string>0 disables the denoiser.</string>
+                       </property>
+                       <property name="decimals">
+                        <number>2</number>
+                       </property>
+                       <property name="minimum">
+                        <double>0.000000000000000</double>
+                       </property>
+                       <property name="maximum">
+                        <double>1.000000000000000</double>
+                       </property>
+                       <property name="singleStep">
+                        <double>0.010000000000000</double>
+                       </property>
+                      </widget>
+                     </item>
+                     <item row="1" column="0">
+                      <widget class="QLabel" name="wienerWindowSizeLabel">
+                       <property name="text">
+                        <string>Window size</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item row="1" column="1">
+                      <widget class="QSpinBox" name="wienerWindowSize">
+                       <property name="minimum">
+                        <number>3</number>
+                       </property>
+                       <property name="maximum">
+                        <number>99</number>
+                       </property>
+                       <property name="singleStep">
+                        <number>2</number>
+                       </property>
+                      </widget>
+                     </item>
+                    </layout>
+                   </widget>
+                  </item>
+                  <item>
+                   <widget class="QGroupBox" name="photoAdjustmentsOptions">
+                    <property name="title">
+                     <string>Photo adjustments</string>
+                    </property>
+                    <property name="toolTip">
+                     <string>Applied to Grayscale, Color and Mixed pages. Black and white pages ignore them.</string>
+                    </property>
+                    <property name="alignment">
+                     <set>Qt::AlignCenter</set>
+                    </property>
+                    <layout class="QGridLayout" name="gridLayoutPhotoAdj">
+                     <item row="0" column="0">
+                      <widget class="QLabel" name="photoTempLabel">
+                       <property name="text">
+                       <string>Temperature</string>
+                      </property>
+                      </widget>
+                     </item>
+                     <item row="0" column="1">
+                      <widget class="QSpinBox" name="photoTempSB">
+                       <property name="minimum">
+                       <number>-100</number>
+                      </property>
+                       <property name="maximum">
+                       <number>100</number>
+                      </property>
+                       <property name="singleStep">
+                       <number>1</number>
+                      </property>
+                      </widget>
+                     </item>
+                     <item row="0" column="2">
+                      <widget class="QLabel" name="photoTintLabel">
+                       <property name="text">
+                       <string>Tint</string>
+                      </property>
+                      </widget>
+                     </item>
+                     <item row="0" column="3">
+                      <widget class="QSpinBox" name="photoTintSB">
+                       <property name="minimum">
+                       <number>-100</number>
+                      </property>
+                       <property name="maximum">
+                       <number>100</number>
+                      </property>
+                       <property name="singleStep">
+                       <number>1</number>
+                      </property>
+                      </widget>
+                     </item>
+                     <item row="1" column="0">
+                      <widget class="QLabel" name="photoExposureLabel">
+                       <property name="text">
+                       <string>Exposure</string>
+                      </property>
+                      </widget>
+                     </item>
+                     <item row="1" column="1">
+                      <widget class="QDoubleSpinBox" name="photoExposureSB">
+                       <property name="decimals">
+                       <number>2</number>
+                      </property>
+                       <property name="minimum">
+                       <double>-1.000000000000000</double>
+                      </property>
+                       <property name="maximum">
+                       <double>1.000000000000000</double>
+                      </property>
+                       <property name="singleStep">
+                       <double>0.010000000000000</double>
+                      </property>
+                      </widget>
+                     </item>
+                     <item row="1" column="2">
+                      <widget class="QLabel" name="photoContrastLabel">
+                       <property name="text">
+                       <string>Contrast</string>
+                      </property>
+                      </widget>
+                     </item>
+                     <item row="1" column="3">
+                      <widget class="QSpinBox" name="photoContrastSB">
+                       <property name="minimum">
+                       <number>-100</number>
+                      </property>
+                       <property name="maximum">
+                       <number>100</number>
+                      </property>
+                       <property name="singleStep">
+                       <number>1</number>
+                      </property>
+                      </widget>
+                     </item>
+                     <item row="2" column="0">
+                      <widget class="QLabel" name="photoHighlightsLabel">
+                       <property name="text">
+                       <string>Highlights</string>
+                      </property>
+                      </widget>
+                     </item>
+                     <item row="2" column="1">
+                      <widget class="QSpinBox" name="photoHighlightsSB">
+                       <property name="minimum">
+                       <number>-100</number>
+                      </property>
+                       <property name="maximum">
+                       <number>100</number>
+                      </property>
+                       <property name="singleStep">
+                       <number>1</number>
+                      </property>
+                      </widget>
+                     </item>
+                     <item row="2" column="2">
+                      <widget class="QLabel" name="photoShadowsLabel">
+                       <property name="text">
+                       <string>Shadows</string>
+                      </property>
+                      </widget>
+                     </item>
+                     <item row="2" column="3">
+                      <widget class="QSpinBox" name="photoShadowsSB">
+                       <property name="minimum">
+                       <number>-100</number>
+                      </property>
+                       <property name="maximum">
+                       <number>100</number>
+                      </property>
+                       <property name="singleStep">
+                       <number>1</number>
+                      </property>
+                      </widget>
+                     </item>
+                     <item row="3" column="0">
+                      <widget class="QLabel" name="photoWhitesLabel">
+                       <property name="text">
+                       <string>Whites</string>
+                      </property>
+                      </widget>
+                     </item>
+                     <item row="3" column="1">
+                      <widget class="QSpinBox" name="photoWhitesSB">
+                       <property name="minimum">
+                       <number>-100</number>
+                      </property>
+                       <property name="maximum">
+                       <number>100</number>
+                      </property>
+                       <property name="singleStep">
+                       <number>1</number>
+                      </property>
+                      </widget>
+                     </item>
+                     <item row="3" column="2">
+                      <widget class="QLabel" name="photoBlacksLabel">
+                       <property name="text">
+                       <string>Blacks</string>
+                      </property>
+                      </widget>
+                     </item>
+                     <item row="3" column="3">
+                      <widget class="QSpinBox" name="photoBlacksSB">
+                       <property name="minimum">
+                       <number>-100</number>
+                      </property>
+                       <property name="maximum">
+                       <number>100</number>
+                      </property>
+                       <property name="singleStep">
+                       <number>1</number>
+                      </property>
+                      </widget>
+                     </item>
+                    </layout>
+                   </widget>
+                  </item>
+                  <item>
                    <spacer name="verticalSpacer_14">
                     <property name="orientation">
                      <enum>Qt::Vertical</enum>
@@ -2584,7 +3085,7 @@ QToolButton:pressed {
                   </item>
                  </layout>
                 </item>
-                <item row="1" column="1">
+                <item row="2" column="1">
                  <layout class="QVBoxLayout" name="verticalLayout_27">
                   <property name="sizeConstraint">
                    <enum>QLayout::SetDefaultConstraint</enum>
@@ -3227,7 +3728,11 @@ QToolButton:pressed {
                    </spacer>
                   </item>
                   <item>
-                   <widget class="QComboBox" name="colorModeSelector"/>
+                   <widget class="QComboBox" name="colorModeSelector">
+                    <property name="toolTip">
+                     <string>The starting mode for a page. Finalize replaces it with its own per-page detection unless the mode was set by hand on that page - use the Auto color policy on the Finalize tab to constrain what it may pick.</string>
+                    </property>
+                   </widget>
                   </item>
                   <item>
                    <spacer name="horizontalSpacer_34">
@@ -3243,6 +3748,19 @@ QToolButton:pressed {
                    </spacer>
                   </item>
                  </layout>
+                </item>
+                <item row="1" column="0" colspan="2">
+                 <widget class="QLabel" name="colorModeNoteLabel">
+                  <property name="text">
+                   <string>Finalize detects the mode per page and overrides this. Constrain it with the Auto color policy on the Finalize tab.</string>
+                  </property>
+                  <property name="wordWrap">
+                   <bool>true</bool>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                 </widget>
                 </item>
                </layout>
               </widget>
@@ -3711,6 +4229,184 @@ QToolButton:pressed {
            </item>
            <item row="2" column="1" colspan="2">
             <spacer name="verticalSpacer_16">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>1</width>
+               <height>1</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </widget>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tabOcr">
+      <attribute name="title">
+       <string>OCR</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_ocr">
+       <item>
+        <widget class="QScrollArea" name="scrollArea_ocr">
+         <property name="widgetResizable">
+          <bool>true</bool>
+         </property>
+         <widget class="QWidget" name="scrollAreaWidgetContents_ocr">
+          <layout class="QVBoxLayout" name="contentsLayout_ocr">
+           <item>
+            <widget class="QGroupBox" name="ocrGroup">
+             <property name="title">
+              <string>Text Recognition</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+             <layout class="QGridLayout" name="gridLayoutOcr">
+              <item row="0" column="0" colspan="2">
+               <widget class="QCheckBox" name="ocrEnabledCB">
+                <property name="text">
+                 <string>Enable OCR</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="ocrLanguageLabel">
+                <property name="text">
+                 <string>Language</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QComboBox" name="ocrLanguageCB">
+                <property name="toolTip">
+                 <string>The system language default is the fastest. Multilingual detection is noticeably slower on long books.</string>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0" colspan="2">
+               <widget class="QCheckBox" name="ocrAccurateCB">
+                <property name="toolTip">
+                 <string>Slower, but recognizes difficult scans more reliably.</string>
+                </property>
+                <property name="text">
+                 <string>Accurate recognition</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0" colspan="2">
+               <widget class="QCheckBox" name="ocrLanguageCorrectionCB">
+                <property name="toolTip">
+                 <string>Lets the recognizer correct words against a language model.</string>
+                </property>
+                <property name="text">
+                 <string>Language correction</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
+            <spacer name="verticalSpacer_ocr">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>1</width>
+               <height>1</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </widget>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tabExport">
+      <attribute name="title">
+       <string>Export</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_export">
+       <item>
+        <widget class="QScrollArea" name="scrollArea_export">
+         <property name="widgetResizable">
+          <bool>true</bool>
+         </property>
+         <widget class="QWidget" name="scrollAreaWidgetContents_export">
+          <layout class="QVBoxLayout" name="contentsLayout_export">
+           <item>
+            <widget class="QGroupBox" name="exportGroup">
+             <property name="title">
+              <string>PDF Export</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+             <layout class="QGridLayout" name="gridLayoutExport">
+              <item row="0" column="0" colspan="2">
+               <widget class="QCheckBox" name="exportNoDpiLimitCB">
+                <property name="toolTip">
+                 <string>Embed the images at their output resolution.</string>
+                </property>
+                <property name="text">
+                 <string>No DPI limit</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="exportMaxDpiLabel">
+                <property name="text">
+                 <string>Max DPI</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QSpinBox" name="exportMaxDpiSB">
+                <property name="minimum">
+                 <number>72</number>
+                </property>
+                <property name="maximum">
+                 <number>1200</number>
+                </property>
+                <property name="singleStep">
+                 <number>10</number>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0" colspan="2">
+               <widget class="QCheckBox" name="exportCompressGrayscaleCB">
+                <property name="toolTip">
+                 <string>Lossy, but produces noticeably smaller files.</string>
+                </property>
+                <property name="text">
+                 <string>Compress grayscale with JPEG</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0">
+               <widget class="QLabel" name="exportQualityLabel">
+                <property name="text">
+                 <string>JPEG quality</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="1">
+               <widget class="QComboBox" name="exportQualityCB">
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
+            <spacer name="verticalSpacer_export">
              <property name="orientation">
               <enum>Qt::Vertical</enum>
              </property>

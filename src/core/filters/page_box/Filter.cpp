@@ -3,7 +3,10 @@
 
 #include "Filter.h"
 
+#include <DefaultParams.h>
+#include <DefaultParamsProvider.h>
 #include <OrderByDeviationProvider.h>
+#include <UnitsConverter.h>
 #include <XmlMarshaller.h>
 #include <XmlUnmarshaller.h>
 #include <filters/select_content/CacheDrivenTask.h>
@@ -164,8 +167,19 @@ void Filter::loadDefaultSettings(const PageInfo& pageInfo) {
   if (!m_settings->isParamsNull(pageInfo.id()))
     return;
 
+  const DefaultParams& defaultParams = DefaultParamsProvider::getInstance().getParams();
+  const DefaultParams::PageBoxParams& pageBoxParams = defaultParams.getPageBoxParams();
+
+  const UnitsConverter unitsConverter(pageInfo.metadata().dpi());
+  const QSizeF& pageRectSize = pageBoxParams.getPageRectSize();
+  double pageRectWidth = pageRectSize.width();
+  double pageRectHeight = pageRectSize.height();
+  unitsConverter.convert(pageRectWidth, pageRectHeight, defaultParams.getUnits(), PIXELS);
+
   const Dependencies deps((QPolygonF()));
-  m_settings->setPageParams(pageInfo.id(), Params(deps));
+  m_settings->setPageParams(pageInfo.id(),
+                            Params(QRectF(QPointF(0, 0), QSizeF(pageRectWidth, pageRectHeight)), deps,
+                                   pageBoxParams.getPageDetectMode(), pageBoxParams.isFineTuneCorners()));
 }
 
 OptionsWidget* Filter::optionsWidget() {

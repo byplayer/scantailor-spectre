@@ -5,10 +5,22 @@
 
 #include <QMutexLocker>
 
+#include "DefaultParams.h"
+#include "DefaultParamsProvider.h"
+
 namespace export_ {
 
+namespace {
+const DefaultParams::ExportParams& exportDefaults() {
+  return DefaultParamsProvider::getInstance().getParams().getExportParams();
+}
+}  // namespace
+
 Settings::Settings()
-    : m_noDpiLimit(true), m_maxDpi(400), m_compressGrayscale(false), m_quality(PdfExporter::Quality::Medium) {}
+    : m_noDpiLimit(exportDefaults().isDpiLimitDisabled()),
+      m_maxDpi(exportDefaults().getMaxDpi()),
+      m_compressGrayscale(exportDefaults().isGrayscaleCompressionEnabled()),
+      m_quality(exportDefaults().getQuality()) {}
 
 bool Settings::noDpiLimit() const {
   QMutexLocker locker(&m_mutex);

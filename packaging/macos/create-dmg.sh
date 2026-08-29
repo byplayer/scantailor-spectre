@@ -112,9 +112,6 @@ fi
 echo "Copying Zotero plugin..."
 cp "$XPI_PATH" "$DMG_TEMP_DIR/"
 
-# Create a symbolic link to /Applications
-ln -s /Applications "$DMG_TEMP_DIR/Applications"
-
 # Create the DMG
 DMG_NAME="ScanTailor-Spectre-${VERSION}.dmg"
 DMG_PATH="$SCRIPT_DIR/$DMG_NAME"
@@ -124,13 +121,44 @@ echo "Creating DMG: $DMG_NAME"
 # Remove existing DMG if present
 rm -f "$DMG_PATH"
 
-# Create the DMG
-hdiutil create \
-    -volname "$APP_NAME" \
-    -srcfolder "$DMG_TEMP_DIR" \
-    -ov \
-    -format UDZO \
-    "$DMG_PATH"
+# `hdiutil create -srcfolder` mounts a temporary volume, copies into it and
+# unmounts it in one go. Spotlight starts indexing the app bundle the moment
+# the volume appears, so that final unmount regularly fails with EBUSY
+# ("Resource busy") and takes the whole image down with it. Staging into a
+# read/write image that we mount and detach ourselves keeps the volume out of
+# Finder and lets us force the detach.
+DMG_RW="$(mktemp -u "${TMPDIR:-/tmp}/scantailor-dmg-XXXXXX").dmg"
+DMG_MOUNT="$(mktemp -d)"
+trap 'hdiutil detach "$DMG_MOUNT" -force >/dev/null 2>&1 || true; rm -rf "$DMG_TEMP_DIR" "$DMG_MOUNT" "$DMG_RW"' EXIT
+
+# Leave room for the HFS+ metadata on top of the payload.
+STAGE_SIZE_MB=$(du -sm "$DMG_TEMP_DIR" | cut -f1)
+hdiutil create -size "$((STAGE_SIZE_MB + 100))m" -fs HFS+ -volname "$APP_NAME" -ov "$DMG_RW"
+hdiutil attach "$DMG_RW" -nobrowse -noautoopen -mountpoint "$DMG_MOUNT"
+
+# ditto preserves the bundle's symlinks, extended attributes and signature.
+for entry in "$DMG_TEMP_DIR"/*; do
+    ditto "$entry" "$DMG_MOUNT/$(basename "$entry")"
+done
+ln -s /Applications "$DMG_MOUNT/Applications"
+sync
+
+detached=false
+for attempt in 1 2 3 4 5; do
+    if hdiutil detach "$DMG_MOUNT" -force > /dev/null 2>&1; then
+        detached=true
+        break
+    fi
+    echo "Staging volume still busy, retrying detach ($attempt)..."
+    sleep 2
+done
+if [ "$detached" = false ]; then
+    echo "Error: could not detach the staging volume at $DMG_MOUNT"
+    exit 1
+fi
+
+hdiutil convert "$DMG_RW" -format UDZO -o "$DMG_PATH"
+rm -f "$DMG_RW"
 
 # Sign the DMG if requested
 if [ "$DO_SIGN" = true ]; then

@@ -58,6 +58,7 @@
 #include "DebugImageView.h"
 #include "DebugImages.h"
 #include "DefaultParamsDialog.h"
+#include "DefaultParamsProvider.h"
 #include "DurationFormatter.h"
 #include "AutoProcessDialog.h"
 #include "filters/finalize/AutoColorDecisionReset.h"
@@ -638,6 +639,7 @@ MainWindow::MainWindow(bool restoreGeometry)
 
   connect(actionSettings, SIGNAL(triggered(bool)), this, SLOT(openSettingsDialog()));
   connect(actionDefaults, SIGNAL(triggered(bool)), this, SLOT(openDefaultParamsDialog()));
+  updateDefaultParamsActionText();
 
   connect(actionNewProject, SIGNAL(triggered(bool)), this, SLOT(newProject()));
   connect(actionOpenProject, SIGNAL(triggered(bool)), this, SLOT(openProject()));
@@ -3326,7 +3328,27 @@ void MainWindow::openDefaultParamsDialog() {
   auto* dialog = new DefaultParamsDialog(this);
   dialog->setAttribute(Qt::WA_DeleteOnClose);
   dialog->setWindowModality(Qt::WindowModal);
+  connect(dialog, &QDialog::accepted, this, &MainWindow::updateDefaultParamsActionText);
   dialog->show();
+}
+
+/**
+ * \brief Spells the active default parameters profile out in the Tools menu,
+ *        so that it is visible without opening the dialog.
+ */
+void MainWindow::updateDefaultParamsActionText() {
+  const QString& profile = DefaultParamsProvider::getInstance().getProfileName();
+  QString profileName;
+  if (profile == "Default") {
+    profileName = tr("Default");
+  } else if (profile == "Source") {
+    profileName = tr("Source");
+  } else if (profile == "Custom") {
+    profileName = tr("Custom");
+  } else {
+    profileName = profile;
+  }
+  actionDefaults->setText(tr("Default parameters (%1) ...").arg(profileName));
 }
 
 void MainWindow::onSettingsChanged() {

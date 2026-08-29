@@ -5,8 +5,13 @@
 
 #include <boost/test/unit_test.hpp>
 
+#include <filters/output/Settings.h>
+
 #include "DefaultParams.h"
 #include "DefaultParamsProfileManager.h"
+#include "DefaultParamsProvider.h"
+#include "ImageId.h"
+#include "PageId.h"
 
 namespace {
 DefaultParams buildNonDefaultParams() {
@@ -113,6 +118,50 @@ BOOST_AUTO_TEST_CASE(every_section_survives_a_profile_round_trip) {
   BOOST_CHECK_EQUAL(exportParams.getMaxDpi(), 250);
   BOOST_CHECK(exportParams.isGrayscaleCompressionEnabled());
   BOOST_CHECK(exportParams.getQuality() == PdfExporter::Quality::High);
+}
+
+// Every per-property setter in output::Settings used to build a page's first
+// Params from scratch, throwing away every default except the one being
+// written - so a color mode change wiped the default photo adjustments.
+BOOST_AUTO_TEST_CASE(output_settings_seed_pages_from_the_default_parameters) {
+  DefaultParamsProvider& provider = DefaultParamsProvider::getInstance();
+  const DefaultParams savedParams = provider.getParams();
+  const QString savedProfileName = provider.getProfileName();
+
+  {
+    weasel::PhotoAdjustments adjustments;
+    adjustments.setExposure(0.4);
+    adjustments.setContrast(20);
+    output::ColorParams colorParams;
+    colorParams.setPhotoAdjustments(adjustments);
+
+    DefaultParams::OutputParams outputParams;
+    outputParams.setColorParams(colorParams);
+    outputParams.setDespeckleLevel(2.5);
+
+    auto defaults = std::make_unique<DefaultParams>();
+    defaults->setOutputParams(outputParams);
+    provider.setParams(std::move(defaults), "Custom");
+  }
+
+  const PageId pageId(ImageId(QStringLiteral("/tmp/seed-page.tif"), 1));
+  output::Settings settings;
+
+  // A page nothing has written yet reports the defaults.
+  BOOST_CHECK_CLOSE(settings.getParams(pageId).colorParams().photoAdjustments().exposure(), 0.4, 0.0001);
+
+  // Storing the first property must keep the rest of the defaults.
+  output::ColorParams changed = settings.getParams(pageId).colorParams();
+  changed.setColorMode(output::GRAYSCALE);
+  settings.setColorParams(pageId, changed);
+
+  const output::Params stored = settings.getParams(pageId);
+  BOOST_CHECK(stored.colorParams().colorMode() == output::GRAYSCALE);
+  BOOST_CHECK_CLOSE(stored.colorParams().photoAdjustments().exposure(), 0.4, 0.0001);
+  BOOST_CHECK_CLOSE(stored.colorParams().photoAdjustments().contrast(), 20.0, 0.0001);
+  BOOST_CHECK_CLOSE(stored.despeckleLevel(), 2.5, 0.0001);
+
+  provider.setParams(std::make_unique<DefaultParams>(savedParams), savedProfileName);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

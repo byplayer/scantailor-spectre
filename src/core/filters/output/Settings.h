@@ -130,12 +130,25 @@ class Settings {
   bool m_autoWhiteBalance = true;  // Auto white balance enabled by default
   std::unordered_set<PageId> m_forceWhiteBalanceDisabled;  // Pages with force WB explicitly disabled (default is ON)
   std::unordered_map<PageId, QColor> m_manualWhiteBalanceColors;  // User-picked paper colors per page
+  /**
+   * \brief The params a page starts from before anything is stored for it.
+   *
+   * Taken from the configured default parameters, so that the Output tab of the
+   * Default Parameters dialog reaches pages nothing has written yet. Callers
+   * must hold m_mutex.
+   */
+  Params buildSeedParams() const;
+
   Dpi m_defaultDpi{300, 300};  // Project-level default DPI (inherited from PDF import)
+  bool m_defaultDpiInherited = false;  // True once a PDF import supplied m_defaultDpi
 
  public:
   // Project-level default DPI (for new pages without params)
   Dpi defaultDpi() const { return m_defaultDpi; }
-  void setDefaultDpi(const Dpi& dpi) { m_defaultDpi = dpi; }
+  void setDefaultDpi(const Dpi& dpi) {
+    m_defaultDpi = dpi;
+    m_defaultDpiInherited = true;
+  }
 };
 }  // namespace output
 #endif  // ifndef SCANTAILOR_OUTPUT_SETTINGS_H_

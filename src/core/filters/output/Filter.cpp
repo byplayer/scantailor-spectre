@@ -3,6 +3,9 @@
 
 #include "Filter.h"
 
+#include <DefaultParams.h>
+#include <DefaultParamsProvider.h>
+
 #include <OrderByCompletenessProvider.h>
 
 #include "CacheDrivenTask.h"
@@ -149,6 +152,15 @@ std::shared_ptr<CacheDrivenTask> Filter::createCacheDrivenTask(const OutputFileN
 void Filter::loadDefaultSettings(const PageInfo& pageInfo) {
   // Keep missing params absent until Finalize runs. Settings::getParams()
   // supplies the existing safe color-mode/default-DPI values meanwhile.
+  //
+  // Pass-through lives in OutputProcessingParams rather than in Params, so it
+  // has to be seeded separately. Only do so when it is on, to keep the
+  // per-page map empty in the common case.
+  if (DefaultParamsProvider::getInstance().getParams().getOutputParams().isPassThroughEnabled()) {
+    OutputProcessingParams processingParams(m_settings->getOutputProcessingParams(pageInfo.id()));
+    processingParams.setPassThrough(true);
+    m_settings->setOutputProcessingParams(pageInfo.id(), processingParams);
+  }
 }
 
 OptionsWidget* Filter::optionsWidget() {

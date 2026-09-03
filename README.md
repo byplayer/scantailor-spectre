@@ -410,6 +410,8 @@ The input can be a PDF, a folder of images, or an existing `.ScanTailor` project
 
 Run with `--help` for the full list. The exit status is 0 on success and non-zero if the conversion failed.
 
+A command line run always goes through Auto Process, so colour is decided the way Auto Process decides it: by the profile's **Finalize → colour policy**, not by the colour mode set on the Output stage. Working through the stages by hand in the app uses the Output colour mode instead, which is why the same profile can come out grayscale in the app and black and white here. Set the policy to **Force grayscale** — or pass `--color gray` — to get grayscale either way.
+
 `--profile` normally takes the name a profile was saved under, exactly as it appears in the app — no path needed. Profiles live in `~/Library/Application Support/scantailor-spectre/scantailor-spectre/profiles`, as `.stp` files. Passing a path to a `.stp` or `.xml` file works too, for a profile that has not been installed.
 
 ## Zotero Integration

@@ -1890,17 +1890,21 @@ void MainWindow::startAutoProcess(const AutoProcessOptions& options) {
   }
 
   auto finalizeSettings = m_stages->finalizeFilter()->settings();
+  m_autoModeForceBlackAndWhite = false;
+  m_autoModeForceGrayscale = false;
   switch (options.colorHandling) {
     case AutoProcessOptions::ColorHandling::ForceBlackAndWhite:
       m_autoModeForceBlackAndWhite = true;
       finalizeSettings->setAutoColorModePolicy(finalize::AutoColorModePolicy::ForceBlackAndWhite);
       break;
     case AutoProcessOptions::ColorHandling::BlackAndWhiteAndGrayscale:
-      m_autoModeForceBlackAndWhite = false;
       finalizeSettings->setAutoColorModePolicy(finalize::AutoColorModePolicy::NeverColor);
       break;
+    case AutoProcessOptions::ColorHandling::ForceGrayscale:
+      m_autoModeForceGrayscale = true;
+      finalizeSettings->setAutoColorModePolicy(finalize::AutoColorModePolicy::ForceGrayscale);
+      break;
     case AutoProcessOptions::ColorHandling::BestGuess:
-      m_autoModeForceBlackAndWhite = false;
       finalizeSettings->setAutoColorModePolicy(finalize::AutoColorModePolicy::BestGuess);
       break;
   }
@@ -1934,11 +1938,9 @@ void MainWindow::autoModeAdvance() {
       recordCurrentAutoStageTime();
 
       if (!useLegacyAutoProcessSequence()) {
-        // Auto Process has always discarded every detected deskew angle by
-        // replacing it with manual zero. Set that policy now, then let the
-        // Select Content composite run deskew pass-through, Page Box, and
-        // content detection from one source load.
-        autoSetDeskewZero();
+        // Settle the deskew angles now, then let the Select Content composite
+        // run deskew, Page Box, and content detection from one source load.
+        autoApplyDeskewPolicy();
         m_autoModeStage = AUTO_SELECT_CONTENT;
         m_autoStageTimer.start();
         filterList->selectRow(m_stages->selectContentFilterIdx());
@@ -1957,7 +1959,7 @@ void MainWindow::autoModeAdvance() {
       break;
 
     case AUTO_DESKEW:
-      autoSetDeskewZero();
+      autoApplyDeskewPolicy();
       recordCurrentAutoStageTime();
       m_autoModeStage = AUTO_PAGE_BOX;
       m_autoStageTimer.start();
@@ -2273,15 +2275,17 @@ void MainWindow::applyAutoProcessColorSettings() {
   for (const PageInfo& pageInfo : pages) {
     output::Params params = outputSettings->getParams(pageInfo.id());
     output::ColorParams colorParams = params.colorParams();
-    if (m_autoModeForceBlackAndWhite) {
-      colorParams.setColorMode(output::BLACK_AND_WHITE);
+    if (m_autoModeForceBlackAndWhite || m_autoModeForceGrayscale) {
+      const bool blackAndWhite = m_autoModeForceBlackAndWhite;
+      colorParams.setColorMode(blackAndWhite ? output::BLACK_AND_WHITE : output::GRAYSCALE);
       colorParams.setColorModeUserSet(true);
       colorParams.setColorModePresetSet(true);
       params.setColorParams(colorParams);
       // Store the complete Params returned by getParams(). On a missing
       // record this retains Settings' project-default DPI.
       outputSettings->setParams(pageInfo.id(), params);
-      finalizeSettings->setColorMode(pageInfo.id(), finalize::ColorMode::BlackAndWhite);
+      finalizeSettings->setColorMode(
+          pageInfo.id(), blackAndWhite ? finalize::ColorMode::BlackAndWhite : finalize::ColorMode::Grayscale);
     } else if (colorParams.isColorModePresetSet()) {
       colorParams.setColorModePresetSet(false);
       colorParams.setColorModeUserSet(false);
@@ -2296,6 +2300,7 @@ void MainWindow::applyAutoProcessColorSettings() {
 
 void MainWindow::resetAutoProcessColorPolicy() {
   m_autoModeForceBlackAndWhite = false;
+  m_autoModeForceGrayscale = false;
   if (m_stages) {
     m_stages->finalizeFilter()->settings()->setAutoColorModePolicy(
         finalize::AutoColorModePolicy::BestGuess);
@@ -2331,9 +2336,17 @@ void MainWindow::autoAcceptPageSplit() {
     forceSinglePageForImages(splitIds);
 }
 
-void MainWindow::autoSetDeskewZero() {
+void MainWindow::autoApplyDeskewPolicy() {
   auto settings = m_stages->deskewFilter()->settings();
   if (!settings) return;
+
+  // Auto Process used to pin every page to manual zero, which threw away the
+  // angle the Deskew stage had just measured. Honour what the defaults ask for
+  // instead: a manual default still means zero for the whole book, an automatic
+  // one now means the detected angle actually gets applied.
+  if (DefaultParamsProvider::getInstance().getParams().getDeskewParams().getMode() == MODE_AUTO) {
+    return;
+  }
 
   const PageSequence pages = m_pages->toPageSequence(getCurrentView());
   std::set<PageId> pageIds;

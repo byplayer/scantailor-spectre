@@ -413,7 +413,7 @@ class MainWindow : public QMainWindow, private FilterUiInterface, private Ui::Ma
   void applyAutoProcessColorSettings();
   void resetAutoProcessColorPolicy();
   void autoAcceptPageSplit();
-  void autoSetDeskewZero();
+  void autoApplyDeskewPolicy();
   void autoAcceptContentOutliers();
   void autoAcceptPageSizeOutliers();
 
@@ -494,6 +494,7 @@ class MainWindow : public QMainWindow, private FilterUiInterface, private Ui::Ma
   AutoModeStage m_autoModeStage = AUTO_NONE;
   bool m_autoModeIncludeOcr = false;
   bool m_autoModeForceBlackAndWhite = false;
+  bool m_autoModeForceGrayscale = false;
   bool m_autoModeRedetectColor = false;
   QElapsedTimer m_autoModeTimer;
   QElapsedTimer m_autoStageTimer;

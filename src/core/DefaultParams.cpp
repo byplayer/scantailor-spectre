@@ -248,6 +248,8 @@ QString autoColorModePolicyToString(finalize::AutoColorModePolicy policy) {
       return "neverColor";
     case finalize::AutoColorModePolicy::ForceBlackAndWhite:
       return "forceBlackAndWhite";
+    case finalize::AutoColorModePolicy::ForceGrayscale:
+      return "forceGrayscale";
     default:
       return "bestGuess";
   }
@@ -258,6 +260,8 @@ finalize::AutoColorModePolicy stringToAutoColorModePolicy(const QString& str) {
     return finalize::AutoColorModePolicy::NeverColor;
   } else if (str == "forceBlackAndWhite") {
     return finalize::AutoColorModePolicy::ForceBlackAndWhite;
+  } else if (str == "forceGrayscale") {
+    return finalize::AutoColorModePolicy::ForceGrayscale;
   }
   return finalize::AutoColorModePolicy::BestGuess;
 }

@@ -73,6 +73,8 @@ DefaultParamsDialog::DefaultParamsDialog(QWidget* parent)
   finalizeColorPolicyCB->addItem(tr("Never color"), static_cast<int>(finalize::AutoColorModePolicy::NeverColor));
   finalizeColorPolicyCB->addItem(tr("Force black and white"),
                                  static_cast<int>(finalize::AutoColorModePolicy::ForceBlackAndWhite));
+  finalizeColorPolicyCB->addItem(tr("Force grayscale"),
+                                 static_cast<int>(finalize::AutoColorModePolicy::ForceGrayscale));
 
   finalizeOutputFormatCB->addItem(tr("TIFF"), static_cast<int>(finalize::OutputFormat::TIFF));
   finalizeOutputFormatCB->addItem(tr("PNG"), static_cast<int>(finalize::OutputFormat::PNG));

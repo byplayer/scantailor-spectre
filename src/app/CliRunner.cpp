@@ -81,6 +81,9 @@ std::optional<AutoProcessOptions::ColorHandling> parseColorHandling(const QStrin
     return AutoProcessOptions::ColorHandling::ForceBlackAndWhite;
   }
   if (value.compare(QStringLiteral("gray"), Qt::CaseInsensitive) == 0) {
+    return AutoProcessOptions::ColorHandling::ForceGrayscale;
+  }
+  if (value.compare(QStringLiteral("nocolor"), Qt::CaseInsensitive) == 0) {
     return AutoProcessOptions::ColorHandling::BlackAndWhiteAndGrayscale;
   }
   if (value.compare(QStringLiteral("auto"), Qt::CaseInsensitive) == 0) {
@@ -95,6 +98,8 @@ AutoProcessOptions::ColorHandling colorHandlingOf(finalize::AutoColorModePolicy 
       return AutoProcessOptions::ColorHandling::ForceBlackAndWhite;
     case finalize::AutoColorModePolicy::NeverColor:
       return AutoProcessOptions::ColorHandling::BlackAndWhiteAndGrayscale;
+    case finalize::AutoColorModePolicy::ForceGrayscale:
+      return AutoProcessOptions::ColorHandling::ForceGrayscale;
     case finalize::AutoColorModePolicy::BestGuess:
       break;
   }
@@ -183,7 +188,7 @@ bool CliRunner::parse(const QStringList& args, Options* options, QString* errorM
   const QCommandLineOption fastOcrOption(QStringLiteral("fast-ocr"), QObject::tr("Fast instead of accurate "
                                                                                 "recognition."));
   const QCommandLineOption colorOption(QStringLiteral("color"),
-                                       QObject::tr("Color handling: auto, gray, or bw."), QStringLiteral("mode"));
+                                       QObject::tr("Color handling: auto, nocolor, gray, or bw."), QStringLiteral("mode"));
   const QCommandLineOption qualityOption(QStringLiteral("quality"),
                                          QObject::tr("PDF quality: high, medium, or low."), QStringLiteral("q"));
   const QCommandLineOption maxDpiOption(QStringLiteral("max-dpi"),
@@ -258,7 +263,7 @@ bool CliRunner::parse(const QStringList& args, Options* options, QString* errorM
   if (parser.isSet(colorOption)) {
     options->colorHandling = parseColorHandling(parser.value(colorOption));
     if (!options->colorHandling) {
-      return fail(QObject::tr("--color expects auto, gray, or bw."));
+      return fail(QObject::tr("--color expects auto, nocolor, gray, or bw."));
     }
   }
 

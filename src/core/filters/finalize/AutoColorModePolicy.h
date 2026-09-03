@@ -9,7 +9,8 @@ namespace finalize {
 enum class AutoColorModePolicy {
   BestGuess,
   NeverColor,
-  ForceBlackAndWhite
+  ForceBlackAndWhite,
+  ForceGrayscale
 };
 
 enum class ColorMode;

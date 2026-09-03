@@ -14,7 +14,12 @@
  * end fills the same struct without asking anyone anything.
  */
 struct AutoProcessOptions {
-  enum class ColorHandling { ForceBlackAndWhite = 0, BlackAndWhiteAndGrayscale = 1, BestGuess = 2 };
+  enum class ColorHandling {
+    ForceBlackAndWhite = 0,
+    BlackAndWhiteAndGrayscale = 1,
+    BestGuess = 2,
+    ForceGrayscale = 3
+  };
 
   /** Run the OCR stage and keep its results for the exported text layer. */
   bool includeOcr = false;

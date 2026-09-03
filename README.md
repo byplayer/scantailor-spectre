@@ -400,7 +400,9 @@ The input can be a PDF, a folder of images, or an existing `.ScanTailor` project
 --ocr / --no-ocr        Run or skip OCR
 --ocr-language <code>   e.g. ja-JP, or 'auto' for multilingual
 --accurate-ocr / --fast-ocr
---color <auto|gray|bw>
+--color <auto|nocolor|gray|bw>
+                        auto detects per page, nocolor keeps color pages out,
+                        gray forces grayscale, bw forces black and white
 --quality <high|medium|low>
 --max-dpi <dpi>         Downsample above this resolution (0 keeps the original)
 --compress-grayscale    JPEG-compress grayscale pages

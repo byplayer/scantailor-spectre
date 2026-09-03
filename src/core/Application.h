@@ -30,6 +30,19 @@ class Application : public QApplication {
 
   const QString& getPortableConfigPath() const;
 
+  /**
+   * \brief Move a macOS install off of the settings kept inside its app bundle.
+   *
+   * Older builds turned themselves portable whenever they could write next to
+   * the executable, which on macOS is inside the bundle - settings and profiles
+   * ended up somewhere the next update simply replaces. Copies what is there to
+   * the locations the app now uses, leaving the originals alone. Does nothing on
+   * other platforms, or once the destination already has the file.
+   *
+   * Reads the application and organization names, so call it after those are set.
+   */
+  void migrateLegacyBundleConfig();
+
  private:
   void initTranslations();
 
@@ -41,6 +54,7 @@ class Application : public QApplication {
   QString m_currentLocale;
   std::map<QString, QString> m_translationsMap;
   QString m_portableConfigPath;
+  QString m_legacyBundleConfigPath;
 };
 
 

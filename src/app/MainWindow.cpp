@@ -3,6 +3,7 @@
 
 #include "MainWindow.h"
 
+
 #include <core/ApplicationSettings.h>
 #include <core/IconProvider.h>
 
@@ -814,6 +815,10 @@ void MainWindow::switchToNewProject(const std::shared_ptr<ProjectPages>& pages,
       // New project - just create the output directory
       QDir().mkpath(outDir);
     }
+  }
+
+  if (pages->numImages() > 0) {
+    emit projectLoaded();
   }
 }  // MainWindow::switchToNewProject
 
@@ -1829,64 +1834,72 @@ void MainWindow::startAutoMode() {
   if (isBatchProcessingInProgress() || !isProjectLoaded()) return;
   if (m_thumbSequence->firstPage().isNull()) return;
 
-  AutoProcessDialog::ColorHandling colorHandling = AutoProcessDialog::ColorHandling::BestGuess;
-  bool autoFastOcr = true;
-  bool autoMultilingualOcr = false;
-  bool autoSkipOcrLanguageCorrection = true;
+  AutoProcessOptions options;
   if (benchmarkAutoEnabled()) {
-    m_autoModeIncludeOcr = benchmarkOcrEnabled();
-    m_autoModeRedetectColor = true;
+    options.includeOcr = benchmarkOcrEnabled();
+    options.redetectColor = true;
+    bool accurateOk = false;
+    const int accurate =
+        qEnvironmentVariableIntValue("SCANTAILOR_BENCHMARK_OCR_ACCURATE", &accurateOk);
+    options.accurateOcr = !accurateOk || accurate != 0;
+    bool languageCorrectionOk = false;
+    const int languageCorrection = qEnvironmentVariableIntValue(
+        "SCANTAILOR_BENCHMARK_OCR_LANGUAGE_CORRECTION", &languageCorrectionOk);
+    if (languageCorrectionOk) {
+      options.ocrLanguageCorrection = languageCorrection != 0;
+    }
+    options.ocrLanguage = qEnvironmentVariable("SCANTAILOR_BENCHMARK_OCR_LANGUAGE");
   } else {
     AutoProcessDialog dialog(this);
     if (dialog.exec() != QDialog::Accepted) {
       return;
     }
-    m_autoModeIncludeOcr = dialog.includeOcr();
-    m_autoModeRedetectColor = dialog.redetectColor();
-    colorHandling = dialog.colorHandling();
-    autoFastOcr = dialog.fastOcr();
-    autoMultilingualOcr = dialog.multilingualOcr();
-    autoSkipOcrLanguageCorrection = dialog.skipOcrLanguageCorrection();
+    options.includeOcr = dialog.includeOcr();
+    options.redetectColor = dialog.redetectColor();
+    options.colorHandling = dialog.colorHandling();
+    options.accurateOcr = !dialog.fastOcr();
+    options.ocrLanguageCorrection = !dialog.skipOcrLanguageCorrection();
+    if (dialog.multilingualOcr()) {
+      options.ocrLanguage = QStringLiteral("auto");
+    } else if (m_stages->ocrFilter()->settings()->language() == QStringLiteral("auto")) {
+      // Preserve an explicit primary language chosen on the OCR stage.
+      options.ocrLanguage = QString();
+    }
   }
+
+  startAutoProcess(options);
+}
+
+void MainWindow::startAutoProcess(const AutoProcessOptions& options) {
+  if (isBatchProcessingInProgress() || !isProjectLoaded()) return;
+  if (m_thumbSequence->firstPage().isNull()) return;
+
+  m_autoModeIncludeOcr = options.includeOcr;
+  m_autoModeRedetectColor = options.redetectColor;
 
   if (m_autoModeIncludeOcr) {
     auto ocrSettings = m_stages->ocrFilter()->settings();
     ocrSettings->setOcrEnabled(true);
-    if (benchmarkAutoEnabled()) {
-      bool accurateOk = false;
-      const int accurate =
-          qEnvironmentVariableIntValue("SCANTAILOR_BENCHMARK_OCR_ACCURATE", &accurateOk);
-      ocrSettings->setUseAccurateRecognition(!accurateOk || accurate != 0);
-      bool languageCorrectionOk = false;
-      const int languageCorrection = qEnvironmentVariableIntValue(
-          "SCANTAILOR_BENCHMARK_OCR_LANGUAGE_CORRECTION", &languageCorrectionOk);
-      if (languageCorrectionOk) {
-        ocrSettings->setUseLanguageCorrection(languageCorrection != 0);
-      }
-      ocrSettings->setLanguage(qEnvironmentVariable("SCANTAILOR_BENCHMARK_OCR_LANGUAGE"));
-    } else {
-      ocrSettings->setUseAccurateRecognition(!autoFastOcr);
-      if (autoMultilingualOcr) {
-        ocrSettings->setLanguage(QStringLiteral("auto"));
-      } else if (ocrSettings->language() == QStringLiteral("auto")) {
-        // Preserve an explicit primary language chosen on the OCR stage.
-        ocrSettings->setLanguage(QString());
-      }
-      ocrSettings->setUseLanguageCorrection(!autoSkipOcrLanguageCorrection);
+    ocrSettings->setUseAccurateRecognition(options.accurateOcr);
+    if (options.ocrLanguage) {
+      ocrSettings->setLanguage(*options.ocrLanguage);
+    }
+    if (options.ocrLanguageCorrection) {
+      ocrSettings->setUseLanguageCorrection(*options.ocrLanguageCorrection);
     }
   }
 
   auto finalizeSettings = m_stages->finalizeFilter()->settings();
-  switch (colorHandling) {
-    case AutoProcessDialog::ColorHandling::ForceBlackAndWhite:
+  switch (options.colorHandling) {
+    case AutoProcessOptions::ColorHandling::ForceBlackAndWhite:
       m_autoModeForceBlackAndWhite = true;
       finalizeSettings->setAutoColorModePolicy(finalize::AutoColorModePolicy::ForceBlackAndWhite);
       break;
-    case AutoProcessDialog::ColorHandling::BlackAndWhiteAndGrayscale:
+    case AutoProcessOptions::ColorHandling::BlackAndWhiteAndGrayscale:
       m_autoModeForceBlackAndWhite = false;
       finalizeSettings->setAutoColorModePolicy(finalize::AutoColorModePolicy::NeverColor);
       break;
-    case AutoProcessDialog::ColorHandling::BestGuess:
+    case AutoProcessOptions::ColorHandling::BestGuess:
       m_autoModeForceBlackAndWhite = false;
       finalizeSettings->setAutoColorModePolicy(finalize::AutoColorModePolicy::BestGuess);
       break;
@@ -2008,26 +2021,32 @@ void MainWindow::autoModeAdvance() {
         startBatchProcessing();
       } else {
         finishAutoProcess(/*completed=*/true);
-        QApplication::alert(this);
-        if (m_checkBeepWhenFinished()) {
-          QApplication::beep();
-        }
+        announceAutoProcessCompletion();
         goFirstPage();
       }
       break;
 
     case AUTO_OCR:
       finishAutoProcess(/*completed=*/true);
-      QApplication::alert(this);
-      if (m_checkBeepWhenFinished()) {
-        QApplication::beep();
-      }
+      announceAutoProcessCompletion();
       goFirstPage();
       break;
 
     default:
       finishAutoProcess(/*completed=*/false);
       break;
+  }
+}
+
+void MainWindow::announceAutoProcessCompletion() {
+  if (m_headless) {
+    // Nobody is watching a hidden window; the command line front end reports
+    // completion itself.
+    return;
+  }
+  QApplication::alert(this);
+  if (m_checkBeepWhenFinished()) {
+    QApplication::beep();
   }
 }
 
@@ -2078,6 +2097,7 @@ void MainWindow::finishAutoProcess(const bool completed) {
     m_autoTimingSummary.clear();
     m_autoTimingBreakdown.clear();
     resetAutoProcessColorPolicy();
+    emit autoProcessFinished(completed);
     return;
   }
 
@@ -2206,7 +2226,7 @@ void MainWindow::finishAutoProcess(const bool completed) {
         completed, elapsedMilliseconds, pageCount, m_autoStageElapsedMs, imageLoadStats, ocrMetrics);
   }
 
-  const bool showSummary = completed && !benchmarkAutoEnabled();
+  const bool showSummary = completed && !benchmarkAutoEnabled() && !m_headless;
   m_autoModeTimer.invalidate();
   m_autoStageTimer.invalidate();
   m_autoModeStage = AUTO_NONE;
@@ -2219,6 +2239,7 @@ void MainWindow::finishAutoProcess(const bool completed) {
   }
   m_autoTimingSummary.clear();
   m_autoTimingBreakdown.clear();
+  emit autoProcessFinished(completed);
   if (benchmarkAutoEnabled()) {
     // Qt's normal quit path can leave a GUI process resident under
     // LaunchServices even after the event loop is asked to stop. All worker
@@ -2768,13 +2789,7 @@ void MainWindow::exportToPdf() {
   }
 
   // Collect output file paths
-  QStringList outputFiles;
-  for (const PageInfo& pageInfo : pages) {
-    const QString filePath = m_outFileNameGen.filePathFor(pageInfo.id());
-    if (QFile::exists(filePath)) {
-      outputFiles.append(filePath);
-    }
-  }
+  const QStringList outputFiles = collectOutputFilePaths(pages, nullptr);
 
   if (outputFiles.isEmpty()) {
     QMessageBox::warning(this, tr("Export to PDF"),
@@ -2870,6 +2885,102 @@ void MainWindow::exportToPdf() {
   }
 }
 
+/**
+ * \brief Output image of every page that has already been processed.
+ *
+ * \param missingPages When given, receives the source paths of the pages that
+ *        have no output image yet.
+ */
+QStringList MainWindow::collectOutputFilePaths(const PageSequence& pages, QStringList* missingPages) const {
+  QStringList outputFiles;
+  for (const PageInfo& pageInfo : pages) {
+    const QString filePath = m_outFileNameGen.filePathFor(pageInfo.id());
+    if (QFile::exists(filePath)) {
+      outputFiles.append(filePath);
+    } else if (missingPages) {
+      missingPages->append(pageInfo.id().imageId().filePath());
+    }
+  }
+  return outputFiles;
+}
+
+/**
+ * \brief Recognized words per output image, for the PDF's invisible text layer.
+ *
+ * Empty when the OCR stage is disabled or nothing was recognized.
+ */
+QMap<QString, PdfExporter::OcrTextData> MainWindow::collectOcrTextData(const PageSequence& pages) const {
+  QMap<QString, PdfExporter::OcrTextData> ocrData;
+  const auto& ocrSettings = m_stages->ocrFilter()->settings();
+  if (!ocrSettings->ocrEnabled()) {
+    return ocrData;
+  }
+
+  for (const PageInfo& pageInfo : pages) {
+    const QString filePath = m_outFileNameGen.filePathFor(pageInfo.id());
+    if (!QFile::exists(filePath)) {
+      continue;  // Skip unprocessed pages
+    }
+
+    const std::unique_ptr<ocr::OcrResult> result = ocrSettings->getOcrResult(pageInfo.id());
+    if (result && !result->isEmpty()) {
+      PdfExporter::OcrTextData textData;
+      textData.imageWidth = result->imageWidth();
+      textData.imageHeight = result->imageHeight();
+
+      for (const ocr::OcrWord& word : result->words()) {
+        PdfExporter::OcrTextData::Word pdfWord;
+        pdfWord.text = word.text;
+        pdfWord.bounds = word.boundingBox;
+        textData.words.append(pdfWord);
+      }
+
+      ocrData.insert(filePath, textData);
+    }
+  }
+  qDebug() << "MainWindow: Collected OCR data for" << ocrData.size() << "pages";
+  return ocrData;
+}
+
+bool MainWindow::exportPdfHeadless(const QString& outputPath, QString* errorMessage) {
+  const auto fail = [errorMessage](const QString& message) {
+    if (errorMessage) {
+      *errorMessage = message;
+    }
+    return false;
+  };
+
+  if (!isProjectLoaded()) {
+    return fail(tr("No project is loaded."));
+  }
+
+  const PageSequence pages = m_thumbSequence->toPageSequence();
+  if (pages.numPages() == 0) {
+    return fail(tr("No pages in project."));
+  }
+
+  QStringList missingPages;
+  const QStringList outputFiles = collectOutputFilePaths(pages, &missingPages);
+  if (outputFiles.isEmpty()) {
+    return fail(tr("No output files found. Please process the pages first."));
+  }
+  if (!missingPages.isEmpty()) {
+    qWarning().noquote() << tr("Exporting %1 of %2 pages - the rest were not processed.")
+                                .arg(outputFiles.size())
+                                .arg(static_cast<int>(pages.numPages()));
+  }
+
+  const auto& exportSettings = m_stages->exportFilter()->settings();
+  const int maxDpi = exportSettings->noDpiLimit() ? 0 : exportSettings->maxDpi();
+  const BookMetadata meta = exportSettings->bookMetadata();
+
+  if (!PdfExporter::exportToPdf(outputFiles, outputPath, meta.title, meta.authors, exportSettings->quality(),
+                                exportSettings->compressGrayscale(), maxDpi, collectOcrTextData(pages))) {
+    return fail(tr("Failed to export to PDF."));
+  }
+  return true;
+}
+
 void MainWindow::exportToPdfFromFilter() {
   if (!isProjectLoaded()) {
     QMessageBox::warning(this, tr("Export to PDF"), tr("No project is loaded."));
@@ -2891,16 +3002,8 @@ void MainWindow::exportToPdfFromFilter() {
   const PdfExporter::Quality quality = exportSettings->quality();
 
   // Collect output file paths and check for unprocessed pages
-  QStringList outputFiles;
   QStringList missingPages;
-  for (const PageInfo& pageInfo : pages) {
-    const QString filePath = m_outFileNameGen.filePathFor(pageInfo.id());
-    if (QFile::exists(filePath)) {
-      outputFiles.append(filePath);
-    } else {
-      missingPages.append(pageInfo.id().imageId().filePath());
-    }
-  }
+  const QStringList outputFiles = collectOutputFilePaths(pages, &missingPages);
 
   // If there are missing pages, offer to process them first
   if (!missingPages.isEmpty()) {
@@ -2945,33 +3048,7 @@ void MainWindow::exportToPdfFromFilter() {
   }
 
   // Collect OCR data if OCR is enabled
-  QMap<QString, PdfExporter::OcrTextData> ocrData;
-  const auto& ocrSettings = m_stages->ocrFilter()->settings();
-  if (ocrSettings->ocrEnabled()) {
-    for (const PageInfo& pageInfo : pages) {
-      const QString filePath = m_outFileNameGen.filePathFor(pageInfo.id());
-      if (!QFile::exists(filePath)) {
-        continue;  // Skip unprocessed pages
-      }
-
-      const std::unique_ptr<ocr::OcrResult> result = ocrSettings->getOcrResult(pageInfo.id());
-      if (result && !result->isEmpty()) {
-        PdfExporter::OcrTextData textData;
-        textData.imageWidth = result->imageWidth();
-        textData.imageHeight = result->imageHeight();
-
-        for (const ocr::OcrWord& word : result->words()) {
-          PdfExporter::OcrTextData::Word pdfWord;
-          pdfWord.text = word.text;
-          pdfWord.bounds = word.boundingBox;
-          textData.words.append(pdfWord);
-        }
-
-        ocrData.insert(filePath, textData);
-      }
-    }
-    qDebug() << "MainWindow: Collected OCR data for" << ocrData.size() << "pages";
-  }
+  const QMap<QString, PdfExporter::OcrTextData> ocrData = collectOcrTextData(pages);
 
   // Export
   const PdfExportRunResult exportResult = runPdfExportInBackground(

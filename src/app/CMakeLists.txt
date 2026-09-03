@@ -15,6 +15,8 @@ set(gui_only_sources
     RelinkingDialog.cpp RelinkingDialog.h
     SettingsDialog.cpp SettingsDialog.h
     AutoProcessDialog.cpp AutoProcessDialog.h
+    AutoProcessOptions.h
+    CliRunner.cpp CliRunner.h
     FixDpiDialog.cpp FixDpiDialog.h
     LoadFilesStatusDialog.cpp LoadFilesStatusDialog.h
     ProjectCreationContext.cpp ProjectCreationContext.h
@@ -157,6 +159,19 @@ if(APPLE)
   get_filename_component(QT_BIN_DIR "${QMAKE_EXECUTABLE}" DIRECTORY)
   find_program(MACDEPLOYQT_EXECUTABLE macdeployqt HINTS "${QT_BIN_DIR}")
 
+  # macdeployqt only deploys the platform plugin the app actually uses, but a
+  # command line conversion asks for the offscreen one, so deploy it by hand.
+  set(SCANTAILOR_OFFSCREEN_PLUGIN_COMMAND)
+  if(TARGET Qt6::QOffscreenIntegrationPlugin)
+    list(APPEND SCANTAILOR_OFFSCREEN_PLUGIN_COMMAND
+      COMMAND /bin/bash "${CMAKE_SOURCE_DIR}/packaging/macos/deploy-offscreen-plugin.sh"
+        "$<TARGET_BUNDLE_DIR:scantailor>"
+        "$<TARGET_FILE:Qt6::QOffscreenIntegrationPlugin>")
+  else()
+    message(WARNING "Qt offscreen platform plugin not found. "
+                    "Command line conversions will fall back to the default platform.")
+  endif()
+
   if(MACDEPLOYQT_EXECUTABLE)
     set(SCANTAILOR_BUNDLE_DIR "$<TARGET_BUNDLE_DIR:scantailor>")
     set(SCANTAILOR_BUNDLE_CONTENTS_DIR "${SCANTAILOR_BUNDLE_DIR}/Contents")
@@ -189,6 +204,7 @@ if(APPLE)
         "${SCANTAILOR_BUNDLE_DIR}"
         -always-overwrite
       COMMAND /bin/bash "${CMAKE_SOURCE_DIR}/packaging/macos/fix-bundle-libs.sh" "${SCANTAILOR_BUNDLE_DIR}"
+      ${SCANTAILOR_OFFSCREEN_PLUGIN_COMMAND}
       ${SCANTAILOR_DOCUMENT_OCR_BUNDLE_COMMAND}
       COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${SCANTAILOR_README_PDF}"
@@ -203,6 +219,7 @@ if(APPLE)
         "${SCANTAILOR_BUNDLED_ZOTERO_PLUGIN_XPI}"
       COMMAND /bin/bash "${SCANTAILOR_ADHOC_SIGN_SCRIPT}" "${SCANTAILOR_BUNDLE_DIR}"
       DEPENDS scantailor "${SCANTAILOR_README_PDF}"
+        "${CMAKE_SOURCE_DIR}/packaging/macos/deploy-offscreen-plugin.sh"
         "${SCANTAILOR_ZOTERO_PLUGIN_MANIFEST}"
         "${SCANTAILOR_ZOTERO_PLUGIN_VALIDATOR}"
         "${SCANTAILOR_ADHOC_SIGN_SCRIPT}"
@@ -225,6 +242,14 @@ if(APPLE)
       COMMAND /bin/bash "${CMAKE_SOURCE_DIR}/packaging/macos/fix-bundle-libs.sh" "$<TARGET_BUNDLE_DIR:scantailor>"
       COMMENT "Fixing missing library dependencies..."
       )
+
+      # Deploy the offscreen platform plugin used by command line conversions
+      if(SCANTAILOR_OFFSCREEN_PLUGIN_COMMAND)
+        add_custom_command(TARGET scantailor POST_BUILD
+        ${SCANTAILOR_OFFSCREEN_PLUGIN_COMMAND}
+        COMMENT "Deploying the offscreen platform plugin..."
+        )
+      endif()
 
       # Ad-hoc code signing for local development
       add_custom_command(TARGET scantailor POST_BUILD

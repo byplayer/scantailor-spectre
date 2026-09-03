@@ -6,6 +6,7 @@
 
 #include <QMainWindow>
 #include <QElapsedTimer>
+#include <QMap>
 #include <QObjectCleanupHandler>
 #include <QPointer>
 #include <QSizeF>
@@ -18,6 +19,7 @@
 #include <vector>
 
 #include "AbstractCommand.h"
+#include "AutoProcessOptions.h"
 #include "BackgroundTask.h"
 #include "BeforeOrAfter.h"
 #include "FilterResult.h"
@@ -27,6 +29,7 @@
 #include "OutputFileNameGenerator.h"
 #include "PageId.h"
 #include "PageRange.h"
+#include "PdfExporter.h"
 #include "PageView.h"
 #include "SelectedPage.h"
 #include "StatusBarPanel.h"
@@ -83,8 +86,30 @@ class MainWindow : public QMainWindow, private FilterUiInterface, private Ui::Ma
 
   std::vector<PageRange> selectedRanges() const;
 
+  /**
+   * Runs Auto Process with a ready-made set of options instead of asking for
+   * them through AutoProcessDialog.
+   */
+  void startAutoProcess(const AutoProcessOptions& options);
+
+  /**
+   * Writes the processed pages to \p outputPath without showing any dialog.
+   * On failure \p errorMessage, when given, receives a printable reason.
+   */
+  bool exportPdfHeadless(const QString& outputPath, QString* errorMessage = nullptr);
+
+  /**
+   * Headless mode keeps the window silent: no summary dialogs, no alerts, no
+   * beeps. It is what the command line front end runs in.
+   */
+  void setHeadless(bool headless) { m_headless = headless; }
+
  signals:
   void projectClosed();
+  /** A project with at least one page finished loading. */
+  void projectLoaded();
+  /** Auto Process reached its last stage (\p completed) or was stopped. */
+  void autoProcessFinished(bool completed);
   void newProjectRequested();
   void quitRequested();
 
@@ -332,6 +357,10 @@ class MainWindow : public QMainWindow, private FilterUiInterface, private Ui::Ma
 
   QString defaultPdfExportPath(const BookMetadata& metadata) const;
 
+  QStringList collectOutputFilePaths(const PageSequence& pages, QStringList* missingPages) const;
+
+  QMap<QString, PdfExporter::OcrTextData> collectOcrTextData(const PageSequence& pages) const;
+
   void showInsertFileDialog(BeforeOrAfter beforeOrAfter, const ImageId& existig);
 
   void showRemovePagesDialog(const std::set<PageId>& pages);
@@ -375,6 +404,7 @@ class MainWindow : public QMainWindow, private FilterUiInterface, private Ui::Ma
   void showBatchProcessingSummary();
 
   void autoModeAdvance();
+  void announceAutoProcessCompletion();
   void startBatchTimer();
   void recordCurrentAutoStageTime();
   void finishAutoProcess(bool completed);
@@ -447,6 +477,7 @@ class MainWindow : public QMainWindow, private FilterUiInterface, private Ui::Ma
   bool m_closing;
   bool m_closeEventPending;
   bool m_quitting;  // True when user explicitly wants to quit (Cmd+Q or Quit menu)
+  bool m_headless = false;        // True when driven from the command line
   bool m_twoPassBatchInProgress;  // True when running first pass (Page Layout) before Output
   int m_twoPassTargetFilter;      // The filter to run after first pass completes
 

@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+#
+# st-spectre-batch-convert - Convert every PDF in a folder with ScanTailor Spectre.
+#
+# Usage: st-spectre-batch-convert <output_dir> <input_dir> <profile_name>
+#
+# Each *.pdf directly inside <input_dir> is converted and written to
+# <output_dir> under the same file name.
+#
+# The app is taken from the standard install location. Set SCAN_TAILOR_PATH to
+# use another copy - either the .app bundle or the executable inside it.
+
+set -euo pipefail
+
+DEFAULT_APP="/Applications/ScanTailor Spectre.app"
+
+usage() {
+    cat >&2 <<USAGE
+Usage: $(basename "$0") <output_dir> <input_dir> <profile_name>
+
+  output_dir     Folder the converted PDFs are written to (created if missing).
+  input_dir      Folder searched for *.pdf files (not recursive).
+  profile_name   Profile to convert with: an installed profile name, a
+                 .stp/.xml file, or Default / Source.
+
+Environment:
+  SCAN_TAILOR_PATH   ScanTailor Spectre.app bundle or its executable.
+                     Defaults to "$DEFAULT_APP".
+USAGE
+    exit 2
+}
+
+if [ "$#" -ne 3 ]; then
+    usage
+fi
+
+OUTPUT_DIR="$1"
+INPUT_DIR="$2"
+PROFILE="$3"
+
+# Resolve the executable: SCAN_TAILOR_PATH may name the bundle or the binary.
+APP_PATH="${SCAN_TAILOR_PATH:-$DEFAULT_APP}"
+if [ -d "$APP_PATH" ]; then
+    SCANTAILOR="$APP_PATH/Contents/MacOS/ScanTailor Spectre"
+else
+    SCANTAILOR="$APP_PATH"
+fi
+
+if [ ! -x "$SCANTAILOR" ]; then
+    echo "Error: ScanTailor Spectre not found at: $SCANTAILOR" >&2
+    echo "Install the app or point SCAN_TAILOR_PATH at it." >&2
+    exit 1
+fi
+
+if [ ! -d "$INPUT_DIR" ]; then
+    echo "Error: input folder not found: $INPUT_DIR" >&2
+    exit 1
+fi
+
+mkdir -p "$OUTPUT_DIR"
+
+# Collect the PDFs first so the loop body can run the app on stdin-free input.
+pdfs=()
+while IFS= read -r -d '' pdf; do
+    pdfs+=("$pdf")
+done < <(find "$INPUT_DIR" -maxdepth 1 -type f -iname '*.pdf' -print0 | sort -z)
+
+if [ "${#pdfs[@]}" -eq 0 ]; then
+    echo "No PDF files found in: $INPUT_DIR" >&2
+    exit 1
+fi
+
+echo "Converting ${#pdfs[@]} PDF(s) with profile '$PROFILE'"
+
+converted=0
+failed=0
+for pdf in "${pdfs[@]}"; do
+    name="$(basename "$pdf")"
+    out="$OUTPUT_DIR/$name"
+
+    if [ "$(cd "$(dirname "$pdf")" && pwd)/$name" = "$(cd "$OUTPUT_DIR" && pwd)/$name" ]; then
+        echo "  skipping $name: output would overwrite the input" >&2
+        failed=$((failed + 1))
+        continue
+    fi
+
+    echo "  $name"
+    if "$SCANTAILOR" --cli --output "$out" --profile "$PROFILE" "$pdf"; then
+        converted=$((converted + 1))
+    else
+        echo "  failed: $name" >&2
+        failed=$((failed + 1))
+    fi
+done
+
+echo ""
+echo "Converted $converted of ${#pdfs[@]} file(s) into $OUTPUT_DIR"
+if [ "$failed" -gt 0 ]; then
+    echo "$failed file(s) failed" >&2
+    exit 1
+fi

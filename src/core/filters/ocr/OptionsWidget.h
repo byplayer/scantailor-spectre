@@ -35,6 +35,7 @@ class OptionsWidget : public FilterOptionsWidget, private Ui::OcrOptionsWidget {
 
  private:
   void updateDisplay();
+  void resultsMayHaveChanged();
   void populateLanguageCombo();
 
   std::shared_ptr<Settings> m_settings;

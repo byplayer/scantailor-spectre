@@ -112,11 +112,13 @@ void OptionsWidget::languageChanged(int index) {
     const QString langCode = languageCombo->itemData(index).toString();
     m_languageBeforeMultilingual = langCode;
     m_settings->setLanguage(langCode);
+    resultsMayHaveChanged();
   }
 }
 
 void OptionsWidget::fastOcrChanged(bool checked) {
   m_settings->setUseAccurateRecognition(!checked);
+  resultsMayHaveChanged();
 }
 
 void OptionsWidget::multilingualChanged(bool checked) {
@@ -129,21 +131,36 @@ void OptionsWidget::multilingualChanged(bool checked) {
   } else {
     m_settings->setLanguage(m_languageBeforeMultilingual);
   }
-  updateDisplay();
+  resultsMayHaveChanged();
 }
 
 void OptionsWidget::skipLanguageCorrectionChanged(bool checked) {
   m_settings->setUseLanguageCorrection(!checked);
+  resultsMayHaveChanged();
 }
 
 void OptionsWidget::clearResultClicked() {
   m_settings->clearOcrResult(m_pageId);
   updateDisplay();
+  emit invalidateThumbnail(m_pageId);
 }
 
 void OptionsWidget::clearAllClicked() {
   m_settings->clearAllResults();
+  resultsMayHaveChanged();
+}
+
+/**
+ * \brief Redraws what depends on the stored OCR results.
+ *
+ * Changing the language, accuracy or language correction throws away every
+ * page's result. The thumbnails decide whether to show their OCR label only
+ * when they are painted, so without this they kept the label until something
+ * else repainted them and then lost it, page by page, long after the change.
+ */
+void OptionsWidget::resultsMayHaveChanged() {
   updateDisplay();
+  emit invalidateAllThumbnails();
 }
 
 }  // namespace ocr

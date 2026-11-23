@@ -85,6 +85,22 @@ CGImageRef createCGImageFromQImage(const QImage& qimage) {
   return cgImage;
 }
 
+// The fast text recognizer aborts the whole process on macOS 27: for any image
+// that contains text it fails to load its model ("[espresso] ... Null path")
+// and then indexes an empty array inside TextRecognition, a Swift fatal error
+// that cannot be caught. Turning language correction on avoids the crash but
+// returns no text at all, so the accurate recognizer is the only usable one
+// there. It costs about a quarter of a second per page.
+bool fastTextRecognitionCrashes() {
+  static const bool crashes = NSProcessInfo.processInfo.operatingSystemVersion.majorVersion >= 27;
+  return crashes;
+}
+
+VNRequestTextRecognitionLevel textRecognitionLevel(const bool accurate) API_AVAILABLE(macos(10.15)) {
+  return (accurate || fastTextRecognitionCrashes()) ? VNRequestTextRecognitionLevelAccurate
+                                                    : VNRequestTextRecognitionLevelFast;
+}
+
 // Perform Vision request synchronously
 NSArray* performVisionRequest(VNRequest* request, CGImageRef cgImage, bool* success = nullptr) {
   if (success) {
@@ -197,7 +213,7 @@ QVector<AppleVisionDetector::TextRegion> AppleVisionDetector::detectTextRegions(
 
     if (@available(macOS 10.15, *)) {
       VNRecognizeTextRequest* request = [[VNRecognizeTextRequest alloc] init];
-      request.recognitionLevel = VNRequestTextRecognitionLevelFast;
+      request.recognitionLevel = textRecognitionLevel(/*accurate=*/false);
       request.usesLanguageCorrection = NO;  // Faster without correction
 
       NSArray* results = performVisionRequest(request, cgImage);
@@ -592,9 +608,7 @@ QVector<AppleVisionDetector::OcrWordResult> AppleVisionDetector::performOcr(cons
       VNRecognizeTextRequest* request = [[VNRecognizeTextRequest alloc] init];
 
       // Set recognition level
-      request.recognitionLevel = config.useAccurateRecognition
-                                     ? VNRequestTextRecognitionLevelAccurate
-                                     : VNRequestTextRecognitionLevelFast;
+      request.recognitionLevel = textRecognitionLevel(config.useAccurateRecognition);
 
       bool correctionOverrideOk = false;
       const int correctionOverride =

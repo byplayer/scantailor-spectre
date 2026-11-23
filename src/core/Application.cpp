@@ -7,8 +7,12 @@
 
 #include <QDir>
 #include <QDirIterator>
+#include <QFile>
+#include <QFileInfo>
 #include <QFileOpenEvent>
 #include <QFontDatabase>
+#include <QSettings>
+#include <QStandardPaths>
 #include <QTemporaryDir>
 
 #include "OutOfMemoryHandler.h"
@@ -94,10 +98,59 @@ void Application::initPortableVersion() {
   }
 
   const QDir portableConfigPath(applicationDirPath() + '/' + portableConfigDirName);
-  if ((portableConfigPath.exists() && QTemporaryDir(portableConfigPath.absolutePath()).isValid())
-      || (!portableConfigPath.exists() && portableConfigPath.mkpath("."))) {
+  // Portable mode is opt-in: a portable copy ships the config directory along
+  // with it. Creating the directory on demand instead, as this used to do, made
+  // every install that happened to sit somewhere writable portable.
+  if (!portableConfigPath.exists()) {
+    return;
+  }
+
+#ifdef Q_OS_MAC
+  // The application directory is inside the bundle here, and an update replaces
+  // the bundle wholesale, so settings kept there would not survive one. Remember
+  // the directory only so migrateLegacyBundleConfig() can copy out of it.
+  m_legacyBundleConfigPath = portableConfigPath.absolutePath();
+#else
+  if (QTemporaryDir(portableConfigPath.absoluteFilePath(".writable-XXXXXX")).isValid()) {
     m_portableConfigPath = portableConfigPath.absolutePath();
   }
+#endif
+}
+
+namespace {
+/**
+ * \brief Copy \p from to \p to, unless \p to is already there.
+ *
+ * A destination that exists is left alone: it is the newer of the two by
+ * definition, since nothing writes to the bundle any more.
+ */
+void copyIfMissing(const QString& from, const QString& to) {
+  if (!QFile::exists(from) || QFile::exists(to)) {
+    return;
+  }
+  if (QDir().mkpath(QFileInfo(to).absolutePath())) {
+    QFile::copy(from, to);
+  }
+}
+}  // namespace
+
+void Application::migrateLegacyBundleConfig() {
+  if (m_legacyBundleConfigPath.isEmpty()) {
+    return;
+  }
+
+  const QDir legacyDir(m_legacyBundleConfigPath);
+
+  const QDir legacyProfiles(legacyDir.absoluteFilePath("profiles"));
+  const QString profilesDest = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/profiles";
+  for (const QFileInfo& profile : legacyProfiles.entryInfoList({"*.stp", "*.xml"}, QDir::Files)) {
+    copyIfMissing(profile.absoluteFilePath(), profilesDest + '/' + profile.fileName());
+  }
+
+  // QSettings::setPath() put the ini under <config>/<organization>/<application>.
+  const QString iniName = applicationName() + ".ini";
+  copyIfMissing(legacyDir.absoluteFilePath(organizationName() + '/' + iniName),
+                QSettings(QSettings::IniFormat, QSettings::UserScope, organizationName(), applicationName()).fileName());
 }
 
 void Application::loadFonts() {

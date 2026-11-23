@@ -14,8 +14,11 @@
 #include <QSGRendererInterface>
 #include <QSettings>
 #include <QStringList>
+#include <QTextStream>
+#include <QTimer>
 
 #include "AppController.h"
+#include "CliRunner.h"
 #include "MainWindow.h"
 
 #ifdef Q_OS_MAC
@@ -23,6 +26,13 @@
 #endif
 
 int main(int argc, char* argv[]) {
+  // A conversion asked for on the command line never shows a window, so it runs
+  // on the offscreen platform plugin: no Dock icon, no window server needed.
+  const bool cliMode = CliRunner::isCliInvocation(argc, argv);
+  if (cliMode) {
+    CliRunner::preferOffscreenPlatform(argv[0]);
+  }
+
   // Force OpenGL backend for Qt Quick so QWebEngineView's internal QQuickWidget
   // composites correctly. Without this, QWebEngineView renders as a black rectangle
   // on macOS because the default Metal backend conflicts with WebEngine's OpenGL
@@ -33,12 +43,14 @@ int main(int argc, char* argv[]) {
   Application app(argc, argv);
 
 #ifdef Q_OS_MAC
-  // Initialize Metal lifecycle observer to detect app backgrounding
-  // This must be done after QApplication is created but before any Metal operations
-  metalLifecycleInit();
+  if (!cliMode) {
+    // Initialize Metal lifecycle observer to detect app backgrounding
+    // This must be done after QApplication is created but before any Metal operations
+    metalLifecycleInit();
 
-  // macOS style: don't quit when last window is closed, only on Cmd+Q or Quit menu
-  Application::setQuitOnLastWindowClosed(false);
+    // macOS style: don't quit when last window is closed, only on Cmd+Q or Quit menu
+    Application::setQuitOnLastWindowClosed(false);
+  }
 #endif
 
 #ifdef _WIN32
@@ -56,6 +68,7 @@ int main(int argc, char* argv[]) {
   if (app.isPortableVersion()) {
     QSettings::setPath(QSettings::IniFormat, QSettings::UserScope, app.getPortableConfigPath());
   }
+  app.migrateLegacyBundleConfig();
 
   app.installLanguage(ApplicationSettings::getInstance().getLanguage());
 
@@ -65,6 +78,18 @@ int main(int argc, char* argv[]) {
     ColorSchemeManager::instance().setColorScheme(*scheme);
   }
   IconProvider::getInstance().setIconPack(StyledIconPack::createDefault());
+
+  if (cliMode) {
+    CliRunner::Options options;
+    QString errorMessage;
+    if (!CliRunner::parse(args, &options, &errorMessage)) {
+      QTextStream(stderr) << QCoreApplication::translate("main", "Error: %1").arg(errorMessage) << Qt::endl;
+      return 2;
+    }
+    auto* runner = new CliRunner(options);
+    QTimer::singleShot(0, runner, &CliRunner::start);
+    return Application::exec();
+  }
 
 #ifdef Q_OS_MAC
   // macOS: Use AppController to manage StartupWindow and MainWindow

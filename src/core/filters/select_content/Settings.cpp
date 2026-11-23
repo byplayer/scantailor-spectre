@@ -7,12 +7,20 @@
 
 #include "../../Utils.h"
 #include "AbstractRelinker.h"
+#include "DefaultParams.h"
+#include "DefaultParamsProvider.h"
 #include "RelinkablePath.h"
 
 using namespace core;
 
 namespace select_content {
 Settings::Settings() : m_pageDetectionBox(0.0, 0.0), m_pageDetectionTolerance(0.1) {
+  {
+    const DefaultParams::SelectContentParams& defaults
+        = DefaultParamsProvider::getInstance().getParams().getSelectContentParams();
+    m_contentFillFactor = defaults.getContentFillFactor();
+    m_borderTolerance = defaults.getBorderTolerance();
+  }
   m_deviationProvider.setComputeValueByKey([this](const PageId& pageId) -> double {
     auto it(m_pageParams.find(pageId));
     if (it != m_pageParams.end()) {

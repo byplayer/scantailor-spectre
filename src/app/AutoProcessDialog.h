@@ -6,17 +6,14 @@
 
 #include <QDialog>
 
+#include "AutoProcessOptions.h"
 #include "ui_AutoProcessDialog.h"
 
 class AutoProcessDialog : public QDialog, private Ui::AutoProcessDialog {
   Q_OBJECT
 
  public:
-  enum class ColorHandling {
-    ForceBlackAndWhite = 0,
-    BlackAndWhiteAndGrayscale = 1,
-    BestGuess = 2
-  };
+  using ColorHandling = AutoProcessOptions::ColorHandling;
 
   explicit AutoProcessDialog(QWidget* parent = nullptr);
 

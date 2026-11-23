@@ -8,6 +8,8 @@
 #include <filters/output/ColorParams.h>
 #include <filters/output/DewarpingOptions.h>
 #include <filters/output/PictureShapeOptions.h>
+#include <filters/finalize/Settings.h>
+#include <filters/ocr/Settings.h>
 #include <filters/page_split/LayoutType.h>
 
 #include <QLineEdit>
@@ -66,6 +68,28 @@ DefaultParamsDialog::DefaultParamsDialog(QWidget* parent)
   m_customDpiItemIdx = dpiSelector->count();
   m_customDpiValue = "200";
   dpiSelector->addItem(tr("Custom"), m_customDpiValue);
+
+  finalizeColorPolicyCB->addItem(tr("Best guess"), static_cast<int>(finalize::AutoColorModePolicy::BestGuess));
+  finalizeColorPolicyCB->addItem(tr("Never color"), static_cast<int>(finalize::AutoColorModePolicy::NeverColor));
+  finalizeColorPolicyCB->addItem(tr("Force black and white"),
+                                 static_cast<int>(finalize::AutoColorModePolicy::ForceBlackAndWhite));
+  finalizeColorPolicyCB->addItem(tr("Force grayscale"),
+                                 static_cast<int>(finalize::AutoColorModePolicy::ForceGrayscale));
+
+  finalizeOutputFormatCB->addItem(tr("TIFF"), static_cast<int>(finalize::OutputFormat::TIFF));
+  finalizeOutputFormatCB->addItem(tr("PNG"), static_cast<int>(finalize::OutputFormat::PNG));
+  finalizeOutputFormatCB->addItem(tr("JPEG"), static_cast<int>(finalize::OutputFormat::JPEG));
+
+  finalizeTiffCompressionCB->addItem(tr("LZW"), static_cast<int>(finalize::TiffCompression::LZW));
+  finalizeTiffCompressionCB->addItem(tr("Deflate"), static_cast<int>(finalize::TiffCompression::Deflate));
+
+  for (const QString& code : ocr::supportedLanguageCodes()) {
+    ocrLanguageCB->addItem(ocr::languageDisplayName(code), code);
+  }
+
+  exportQualityCB->addItem(tr("High"), static_cast<int>(PdfExporter::Quality::High));
+  exportQualityCB->addItem(tr("Medium"), static_cast<int>(PdfExporter::Quality::Medium));
+  exportQualityCB->addItem(tr("Low"), static_cast<int>(PdfExporter::Quality::Low));
 
   dewarpingModeCB->addItem(tr("Off"), OFF);
   dewarpingModeCB->addItem(tr("Auto"), AUTO);
@@ -181,7 +205,7 @@ void DefaultParamsDialog::updateDeskewDisplay(const DefaultParams::DeskewParams&
   angleSpinBox->setValue(params.getDeskewAngleDeg());
 }
 
-void DefaultParamsDialog::updateSelectContentDisplay(const DefaultParams::SelectContentParams& params) {
+void DefaultParamsDialog::updatePageBoxDisplay(const DefaultParams::PageBoxParams& params) {
   const AutoManualMode pageDetectMode = params.getPageDetectMode();
   pageDetectOptions->setEnabled(pageDetectMode != MODE_DISABLED);
   fineTuneBtn->setEnabled(pageDetectMode == MODE_AUTO);
@@ -198,16 +222,50 @@ void DefaultParamsDialog::updateSelectContentDisplay(const DefaultParams::Select
       break;
   }
 
+  const QSizeF pageRectSize = params.getPageRectSize();
+  widthSpinBox->setValue(pageRectSize.width());
+  heightSpinBox->setValue(pageRectSize.height());
+  fineTuneBtn->setChecked(params.isFineTuneCorners());
+}
+
+void DefaultParamsDialog::updateSelectContentDisplay(const DefaultParams::SelectContentParams& params) {
   if (params.isContentDetectEnabled()) {
     contentDetectAutoBtn->setChecked(true);
   } else {
     contentDetectDisableBtn->setChecked(true);
   }
 
-  QSizeF pageRectSize = params.getPageRectSize();
-  widthSpinBox->setValue(pageRectSize.width());
-  heightSpinBox->setValue(pageRectSize.height());
-  fineTuneBtn->setChecked(params.isFineTuneCorners());
+  contentFillFactorSB->setValue(params.getContentFillFactor());
+  borderToleranceSB->setValue(params.getBorderTolerance());
+}
+
+void DefaultParamsDialog::updateFinalizeDisplay(const DefaultParams::FinalizeParams& params) {
+  finalizeColorPolicyCB->setCurrentIndex(
+      finalizeColorPolicyCB->findData(static_cast<int>(params.getAutoColorModePolicy())));
+  finalizeAutoWhiteBalanceCB->setChecked(params.isAutoWhiteBalanceEnabled());
+  finalizeMidtoneThresholdSB->setValue(params.getMidtoneThreshold());
+  finalizeOutputFormatCB->setCurrentIndex(finalizeOutputFormatCB->findData(static_cast<int>(params.getOutputFormat())));
+  finalizeTiffCompressionCB->setCurrentIndex(
+      finalizeTiffCompressionCB->findData(static_cast<int>(params.getTiffCompression())));
+  finalizeJpegQualitySB->setValue(params.getJpegQuality());
+  finalizeOutputFormatChanged(finalizeOutputFormatCB->currentIndex());
+}
+
+void DefaultParamsDialog::updateOcrDisplay(const DefaultParams::OcrParams& params) {
+  ocrEnabledCB->setChecked(params.isOcrEnabled());
+  const int languageIdx = ocrLanguageCB->findData(params.getLanguage());
+  ocrLanguageCB->setCurrentIndex((languageIdx != -1) ? languageIdx : 0);
+  ocrAccurateCB->setChecked(params.isAccurateRecognitionEnabled());
+  ocrLanguageCorrectionCB->setChecked(params.isLanguageCorrectionEnabled());
+  ocrEnabledToggled(params.isOcrEnabled());
+}
+
+void DefaultParamsDialog::updateExportDisplay(const DefaultParams::ExportParams& params) {
+  exportNoDpiLimitCB->setChecked(params.isDpiLimitDisabled());
+  exportMaxDpiSB->setValue(params.getMaxDpi());
+  exportCompressGrayscaleCB->setChecked(params.isGrayscaleCompressionEnabled());
+  exportQualityCB->setCurrentIndex(exportQualityCB->findData(static_cast<int>(params.getQuality())));
+  exportNoDpiLimitToggled(params.isDpiLimitDisabled());
 }
 
 void DefaultParamsDialog::updatePageLayoutDisplay(const DefaultParams::PageLayoutParams& params) {
@@ -336,6 +394,21 @@ void DefaultParamsDialog::updateOutputDisplay(const DefaultParams::OutputParams&
   dewarpingPostDeskewCB->setChecked(params.getDewarpingOptions().needPostDeskew());
   depthPerceptionSlider->setValue(qRound(params.getDepthPerception().value() * 10));
 
+  passThroughCheckBox->setChecked(params.isPassThroughEnabled());
+
+  wienerCoef->setValue(colorCommonOptions.wienerCoef());
+  wienerWindowSize->setValue(colorCommonOptions.wienerWindowSize());
+
+  const weasel::PhotoAdjustments& photoAdjustments = colorParams.photoAdjustments();
+  photoTempSB->setValue(qRound(photoAdjustments.temp()));
+  photoTintSB->setValue(qRound(photoAdjustments.tint()));
+  photoExposureSB->setValue(photoAdjustments.exposure());
+  photoContrastSB->setValue(qRound(photoAdjustments.contrast()));
+  photoHighlightsSB->setValue(qRound(photoAdjustments.highlights()));
+  photoShadowsSB->setValue(qRound(photoAdjustments.shadows()));
+  photoWhitesSB->setValue(qRound(photoAdjustments.whites()));
+  photoBlacksSB->setValue(qRound(photoAdjustments.blacks()));
+
   // update the display
   colorModeChanged(colorModeSelector->currentIndex());
   thresholdMethodChanged(thresholdMethodBox->currentIndex());
@@ -388,6 +461,9 @@ void DefaultParamsDialog::setupUiConnections() {
   CONNECT(posterizeCB, SIGNAL(clicked(bool)), this, SLOT(posterizeToggled(bool)));
   CONNECT(despeckleCB, SIGNAL(clicked(bool)), this, SLOT(despeckleToggled(bool)));
   CONNECT(despeckleSlider, SIGNAL(valueChanged(int)), this, SLOT(despeckleSliderValueChanged(int)));
+  CONNECT(finalizeOutputFormatCB, SIGNAL(currentIndexChanged(int)), this, SLOT(finalizeOutputFormatChanged(int)));
+  CONNECT(ocrEnabledCB, SIGNAL(toggled(bool)), this, SLOT(ocrEnabledToggled(bool)));
+  CONNECT(exportNoDpiLimitCB, SIGNAL(toggled(bool)), this, SLOT(exportNoDpiLimitToggled(bool)));
 }
 
 #undef CONNECT
@@ -527,6 +603,17 @@ void DefaultParamsDialog::colorModeChanged(const int idx) {
   savitzkyGolaySmoothingCB->setEnabled(!isColorOrGrayscale);
   morphologicalSmoothingCB->setEnabled(!isColorOrGrayscale);
 
+  // Mirror what the Output stage shows per mode: the denoiser belongs to the
+  // color/grayscale pipeline, binarization throws the photo adjustments away,
+  // and white balance needs chroma to work on.
+  wienerOptions->setEnabled(isColorOrGrayscale);
+  photoAdjustmentsOptions->setEnabled(colorMode != BLACK_AND_WHITE);
+  const bool whiteBalanceApplies = (colorMode != BLACK_AND_WHITE) && (colorMode != GRAYSCALE);
+  photoTempLabel->setEnabled(whiteBalanceApplies);
+  photoTempSB->setEnabled(whiteBalanceApplies);
+  photoTintLabel->setEnabled(whiteBalanceApplies);
+  photoTintSB->setEnabled(whiteBalanceApplies);
+
   colorSegmentationCB->setEnabled(thresholdOptionsVisible);
   segmenterOptionsWidget->setEnabled(thresholdOptionsVisible && colorSegmentationCB->isChecked());
   if (thresholdOptionsVisible) {
@@ -588,9 +675,13 @@ void DefaultParamsDialog::loadParams(const DefaultParams& params) {
   updateFixOrientationDisplay(params.getFixOrientationParams());
   updatePageSplitDisplay(params.getPageSplitParams());
   updateDeskewDisplay(params.getDeskewParams());
+  updatePageBoxDisplay(params.getPageBoxParams());
   updateSelectContentDisplay(params.getSelectContentParams());
   updatePageLayoutDisplay(params.getPageLayoutParams());
+  updateFinalizeDisplay(params.getFinalizeParams());
   updateOutputDisplay(params.getOutputParams());
+  updateOcrDisplay(params.getOcrParams());
+  updateExportDisplay(params.getExportParams());
 }
 
 std::unique_ptr<DefaultParams> DefaultParamsDialog::buildParams() const {
@@ -613,9 +704,15 @@ std::unique_ptr<DefaultParams> DefaultParamsDialog::buildParams() const {
   const AutoManualMode pageBoxMode = pageDetectDisableBtn->isChecked()  ? MODE_DISABLED
                                      : pageDetectManualBtn->isChecked() ? MODE_MANUAL
                                                                         : MODE_AUTO;
-  DefaultParams::SelectContentParams selectContentParams(QSizeF(widthSpinBox->value(), heightSpinBox->value()),
-                                                         !contentDetectDisableBtn->isChecked(), pageBoxMode,
-                                                         fineTuneBtn->isChecked());
+  const QSizeF pageRectSize(widthSpinBox->value(), heightSpinBox->value());
+  DefaultParams::PageBoxParams pageBoxParams(pageRectSize, pageBoxMode, fineTuneBtn->isChecked());
+
+  // The page box values are mirrored into the select content params, which still
+  // carry them for the pre-page-box project format.
+  DefaultParams::SelectContentParams selectContentParams(pageRectSize, !contentDetectDisableBtn->isChecked(),
+                                                         pageBoxMode, fineTuneBtn->isChecked());
+  selectContentParams.setContentFillFactor(contentFillFactorSB->value());
+  selectContentParams.setBorderTolerance(borderToleranceSB->value());
 
   Alignment alignment;
   switch (hAlignmentModeCB->currentIndex()) {
@@ -666,7 +763,20 @@ std::unique_ptr<DefaultParams> DefaultParamsDialog::buildParams() const {
   posterizationOptions.setNormalizationEnabled(posterizeNormalizationCB->isChecked());
   posterizationOptions.setForceBlackAndWhite(posterizeForceBwCB->isChecked());
   colorCommonOptions.setPosterizationOptions(posterizationOptions);
+  colorCommonOptions.setWienerCoef(wienerCoef->value());
+  colorCommonOptions.setWienerWindowSize(wienerWindowSize->value());
   colorParams.setColorCommonOptions(colorCommonOptions);
+
+  weasel::PhotoAdjustments photoAdjustments;
+  photoAdjustments.setTemp(photoTempSB->value());
+  photoAdjustments.setTint(photoTintSB->value());
+  photoAdjustments.setExposure(photoExposureSB->value());
+  photoAdjustments.setContrast(photoContrastSB->value());
+  photoAdjustments.setHighlights(photoHighlightsSB->value());
+  photoAdjustments.setShadows(photoShadowsSB->value());
+  photoAdjustments.setWhites(photoWhitesSB->value());
+  photoAdjustments.setBlacks(photoBlacksSB->value());
+  colorParams.setPhotoAdjustments(photoAdjustments);
 
   BlackWhiteOptions blackWhiteOptions;
   blackWhiteOptions.setNormalizeIllumination(equalizeIlluminationCB->isChecked());
@@ -718,9 +828,34 @@ std::unique_ptr<DefaultParams> DefaultParamsDialog::buildParams() const {
   DefaultParams::OutputParams outputParams(Dpi(dpi, dpi), colorParams, splittingOptions, pictureShapeOptions,
                                            DepthPerception(0.1 * depthPerceptionSlider->value()), dewarpingOptions,
                                            despeckleLevel);
+  outputParams.setPassThroughEnabled(passThroughCheckBox->isChecked());
 
-  std::unique_ptr<DefaultParams> defaultParams = std::make_unique<DefaultParams>(
-      fixOrientationParams, deskewParams, pageSplitParams, selectContentParams, pageLayoutParams, outputParams);
+  DefaultParams::FinalizeParams finalizeParams;
+  finalizeParams.setAutoColorModePolicy(
+      static_cast<finalize::AutoColorModePolicy>(finalizeColorPolicyCB->currentData().toInt()));
+  finalizeParams.setAutoWhiteBalanceEnabled(finalizeAutoWhiteBalanceCB->isChecked());
+  finalizeParams.setMidtoneThreshold(finalizeMidtoneThresholdSB->value());
+  finalizeParams.setOutputFormat(static_cast<finalize::OutputFormat>(finalizeOutputFormatCB->currentData().toInt()));
+  finalizeParams.setTiffCompression(
+      static_cast<finalize::TiffCompression>(finalizeTiffCompressionCB->currentData().toInt()));
+  finalizeParams.setJpegQuality(finalizeJpegQualitySB->value());
+
+  DefaultParams::OcrParams ocrParams;
+  ocrParams.setOcrEnabled(ocrEnabledCB->isChecked());
+  ocrParams.setLanguage(ocrLanguageCB->currentData().toString());
+  ocrParams.setAccurateRecognitionEnabled(ocrAccurateCB->isChecked());
+  ocrParams.setLanguageCorrectionEnabled(ocrLanguageCorrectionCB->isChecked());
+
+  DefaultParams::ExportParams exportParams;
+  exportParams.setDpiLimitDisabled(exportNoDpiLimitCB->isChecked());
+  exportParams.setMaxDpi(exportMaxDpiSB->value());
+  exportParams.setGrayscaleCompressionEnabled(exportCompressGrayscaleCB->isChecked());
+  exportParams.setQuality(static_cast<PdfExporter::Quality>(exportQualityCB->currentData().toInt()));
+
+  std::unique_ptr<DefaultParams> defaultParams
+      = std::make_unique<DefaultParams>(fixOrientationParams, deskewParams, pageSplitParams, pageBoxParams,
+                                        selectContentParams, pageLayoutParams, finalizeParams, outputParams,
+                                        ocrParams, exportParams);
   defaultParams->setUnits(m_currentUnits);
   return defaultParams;
 }
@@ -995,6 +1130,18 @@ void DefaultParamsDialog::commitChanges() {
   } else {
     params = buildParams();
   }
+
+  // "Custom" is not in the profile list, so nothing else ever writes it out.
+  // Without a file of its own, DefaultParamsProvider fails to read it back on
+  // the next launch and silently falls back to "Default", losing the values
+  // the user just confirmed. The profile list skips reserved names, so the
+  // file does not show up as a second entry in the combo box.
+  if ((profile == "Custom") && !m_profileManager.writeProfile(*params, profile)) {
+    QMessageBox::warning(this, tr("Error"),
+                         tr("Could not save the custom parameters. They apply to this session, but the profile "
+                            "will be back to Default the next time ScanTailor starts."));
+  }
+
   DefaultParamsProvider::getInstance().setParams(std::move(params), profile);
   ApplicationSettings::getInstance().setCurrentProfile(profile);
 }
@@ -1004,6 +1151,28 @@ void DefaultParamsDialog::setTabWidgetsEnabled(const bool enabled) {
     QWidget* widget = tabWidget->widget(i);
     widget->setEnabled(enabled);
   }
+}
+
+void DefaultParamsDialog::finalizeOutputFormatChanged(const int idx) {
+  const auto format = static_cast<finalize::OutputFormat>(finalizeOutputFormatCB->itemData(idx).toInt());
+  const bool isTiff = (format == finalize::OutputFormat::TIFF);
+  const bool isJpeg = (format == finalize::OutputFormat::JPEG);
+  finalizeTiffCompressionLabel->setEnabled(isTiff);
+  finalizeTiffCompressionCB->setEnabled(isTiff);
+  finalizeJpegQualityLabel->setEnabled(isJpeg);
+  finalizeJpegQualitySB->setEnabled(isJpeg);
+}
+
+void DefaultParamsDialog::ocrEnabledToggled(const bool checked) {
+  ocrLanguageLabel->setEnabled(checked);
+  ocrLanguageCB->setEnabled(checked);
+  ocrAccurateCB->setEnabled(checked);
+  ocrLanguageCorrectionCB->setEnabled(checked);
+}
+
+void DefaultParamsDialog::exportNoDpiLimitToggled(const bool checked) {
+  exportMaxDpiLabel->setEnabled(!checked);
+  exportMaxDpiSB->setEnabled(!checked);
 }
 
 void DefaultParamsDialog::colorSegmentationToggled(bool checked) {

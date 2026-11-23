@@ -380,6 +380,40 @@ If your scan is lower quality or to be read on screen only, you may find that lo
 
 The exported PDF is separate. Create it from Stage 10 with **Export to PDF**.
 
+## Command Line
+
+ScanTailor Spectre can convert a scan without opening a window, which makes it usable from a script or a batch job. The executable lives inside the app bundle:
+
+```
+"/Applications/ScanTailor Spectre.app/Contents/MacOS/ScanTailor Spectre" \
+    --output book.pdf scans.pdf
+```
+
+The input can be a PDF, a folder of images, or an existing `.ScanTailor` project. Passing `--output` is what turns on command line mode; everything else is optional and falls back to the same defaults the app uses.
+
+```
+--profile <name|file>   An installed profile name, a profile file (.stp/.xml),
+                        or Default / Source
+--work-dir <dir>        Where intermediate page images go (default: a temp folder)
+--dpi <dpi>             Import resolution for PDF input
+--rtl                   Right-to-left page order, for folder input
+--ocr / --no-ocr        Run or skip OCR
+--ocr-language <code>   e.g. ja-JP, or 'auto' for multilingual
+--accurate-ocr / --fast-ocr
+--color <auto|nocolor|gray|bw>
+                        auto detects per page, nocolor keeps color pages out,
+                        gray forces grayscale, bw forces black and white
+--quality <high|medium|low>
+--max-dpi <dpi>         Downsample above this resolution (0 keeps the original)
+--compress-grayscale    JPEG-compress grayscale pages
+```
+
+Run with `--help` for the full list. The exit status is 0 on success and non-zero if the conversion failed.
+
+A command line run always goes through Auto Process, so colour is decided the way Auto Process decides it: by the profile's **Finalize → colour policy**, not by the colour mode set on the Output stage. Working through the stages by hand in the app uses the Output colour mode instead, which is why the same profile can come out grayscale in the app and black and white here. Set the policy to **Force grayscale** — or pass `--color gray` — to get grayscale either way.
+
+`--profile` normally takes the name a profile was saved under, exactly as it appears in the app — no path needed. Profiles live in `~/Library/Application Support/scantailor-spectre/scantailor-spectre/profiles`, as `.stp` files. Passing a path to a `.stp` or `.xml` file works too, for a profile that has not been installed.
+
 ## Zotero Integration
 
 ScanTailor Spectre can round-trip a scan with Zotero: pick a PDF in your Zotero library, clean it up in ScanTailor Spectre, and the exported PDF returns to the same Zotero item as a new attachment. The original Zotero-managed file is never modified.

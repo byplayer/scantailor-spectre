@@ -30,6 +30,11 @@ inline ColorMode applyAutoColorModePolicy(ColorMode detectedMode, AutoColorModeP
   if (policy == AutoColorModePolicy::ForceBlackAndWhite) {
     return ColorMode::BlackAndWhite;
   }
+  if (policy == AutoColorModePolicy::ForceGrayscale) {
+    // Detection reads a page of text as black and white, which throws away
+    // every shade in a photograph or a faint pencil mark. This keeps them.
+    return ColorMode::Grayscale;
+  }
   if (policy == AutoColorModePolicy::NeverColor
       && (detectedMode == ColorMode::Color || detectedMode == ColorMode::Mixed)) {
     return ColorMode::Grayscale;

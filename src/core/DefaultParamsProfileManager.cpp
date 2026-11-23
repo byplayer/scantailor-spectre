@@ -17,8 +17,11 @@ using namespace output;
 using namespace page_layout;
 
 DefaultParamsProfileManager::DefaultParamsProfileManager() {
-  auto* app = static_cast<Application*>(qApp);
-  if (app->isPortableVersion()) {
+  // The filter Settings classes read the default parameters from their
+  // constructors, so this can run without an Application around it - notably
+  // under the test runner, where qApp is null.
+  auto* app = qobject_cast<Application*>(qApp);
+  if ((app != nullptr) && app->isPortableVersion()) {
     m_path = app->getPortableConfigPath() + "/profiles";
   } else {
     m_path = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + "/profiles";
@@ -142,7 +145,9 @@ std::unique_ptr<DefaultParams> DefaultParamsProfileManager::createSourceProfile(
 
   outputParams.setColorParams(colorParams);
   return std::make_unique<DefaultParams>(DefaultParams::FixOrientationParams(), deskewParams, pageSplitParams,
-                                         selectContentParams, pageLayoutParams, outputParams);
+                                         DefaultParams::PageBoxParams(), selectContentParams, pageLayoutParams,
+                                         DefaultParams::FinalizeParams(), outputParams, DefaultParams::OcrParams(),
+                                         DefaultParams::ExportParams());
 }
 
 bool DefaultParamsProfileManager::deleteProfile(const QString& name) const {

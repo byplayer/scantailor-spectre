@@ -7,6 +7,8 @@
 #include <QMutexLocker>
 
 #include "AbstractRelinker.h"
+#include "DefaultParams.h"
+#include "DefaultParamsProvider.h"
 #include "PageSequence.h"
 #include "RelinkablePath.h"
 
@@ -130,7 +132,13 @@ QString languageDisplayName(const QString& code) {
   return code;
 }
 
-Settings::Settings() = default;
+Settings::Settings() {
+  const DefaultParams::OcrParams& defaults = DefaultParamsProvider::getInstance().getParams().getOcrParams();
+  m_ocrEnabled = defaults.isOcrEnabled();
+  m_language = defaults.getLanguage();
+  m_useAccurateRecognition = defaults.isAccurateRecognitionEnabled();
+  m_useLanguageCorrection = defaults.isLanguageCorrectionEnabled();
+}
 
 Settings::~Settings() = default;
 

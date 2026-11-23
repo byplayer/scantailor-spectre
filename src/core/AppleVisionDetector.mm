@@ -12,6 +12,7 @@
 #import <AppKit/AppKit.h>
 #import <objc/message.h>
 #include <dlfcn.h>
+#include <mutex>
 #include <QImageReader>
 #include <QElapsedTimer>
 
@@ -85,17 +86,56 @@ CGImageRef createCGImageFromQImage(const QImage& qimage) {
   return cgImage;
 }
 
-// Perform Vision request synchronously
+// The fast text recognizer aborts the whole process on macOS 27: for any image
+// that contains text it fails to load its model ("[espresso] ... Null path")
+// and then indexes an empty array inside TextRecognition, a Swift fatal error
+// that cannot be caught. Turning language correction on avoids the crash but
+// returns no text at all, so the accurate recognizer is the only usable one
+// there. It costs about a quarter of a second per page.
+bool fastTextRecognitionCrashes() {
+  static const bool crashes = NSProcessInfo.processInfo.operatingSystemVersion.majorVersion >= 27;
+  return crashes;
+}
+
+VNRequestTextRecognitionLevel textRecognitionLevel(const bool accurate) API_AVAILABLE(macos(10.15)) {
+  return (accurate || fastTextRecognitionCrashes()) ? VNRequestTextRecognitionLevelAccurate
+                                                    : VNRequestTextRecognitionLevelFast;
+}
+
+// Perform Vision request synchronously.
+//
+// Text recognition fails now and then without anything being wrong with the
+// image. While Vision is loading its model - which took close to a minute the
+// first time after an update - requests that arrive together get
+// CRImageReaderError 1, page after page, while one request at a time waits for
+// the model and succeeds. A failed request is therefore retried one at a time
+// instead of letting the page silently go without OCR text (and so without its
+// OCR label), or without the text evidence deskew and content detection use.
+NSError* runVisionRequest(VNRequest* request, CGImageRef cgImage) {
+  VNImageRequestHandler* handler = [[VNImageRequestHandler alloc]
+      initWithCGImage:cgImage
+              options:@{}];
+  NSError* error = nil;
+  [handler performRequests:@[request] error:&error];
+  return error;
+}
+
 NSArray* performVisionRequest(VNRequest* request, CGImageRef cgImage, bool* success = nullptr) {
   if (success) {
     *success = false;
   }
-  VNImageRequestHandler* handler = [[VNImageRequestHandler alloc]
-      initWithCGImage:cgImage
-              options:@{}];
 
-  NSError* error = nil;
-  [handler performRequests:@[request] error:&error];
+  NSError* error = runVisionRequest(request, cgImage);
+  if (error) {
+    static std::mutex retryMutex;
+    const std::lock_guard<std::mutex> lock(retryMutex);
+    constexpr int kRetries = 2;
+    for (int retry = 1; error && retry <= kRetries; ++retry) {
+      NSLog(@"Vision request failed, retrying alone (%d of %d): %@", retry, kRetries,
+            error.localizedDescription);
+      error = runVisionRequest(request, cgImage);
+    }
+  }
 
   if (error) {
     NSLog(@"Vision request failed: %@", error.localizedDescription);
@@ -197,7 +237,7 @@ QVector<AppleVisionDetector::TextRegion> AppleVisionDetector::detectTextRegions(
 
     if (@available(macOS 10.15, *)) {
       VNRecognizeTextRequest* request = [[VNRecognizeTextRequest alloc] init];
-      request.recognitionLevel = VNRequestTextRecognitionLevelFast;
+      request.recognitionLevel = textRecognitionLevel(/*accurate=*/false);
       request.usesLanguageCorrection = NO;  // Faster without correction
 
       NSArray* results = performVisionRequest(request, cgImage);
@@ -592,9 +632,7 @@ QVector<AppleVisionDetector::OcrWordResult> AppleVisionDetector::performOcr(cons
       VNRecognizeTextRequest* request = [[VNRecognizeTextRequest alloc] init];
 
       // Set recognition level
-      request.recognitionLevel = config.useAccurateRecognition
-                                     ? VNRequestTextRecognitionLevelAccurate
-                                     : VNRequestTextRecognitionLevelFast;
+      request.recognitionLevel = textRecognitionLevel(config.useAccurateRecognition);
 
       bool correctionOverrideOk = false;
       const int correctionOverride =

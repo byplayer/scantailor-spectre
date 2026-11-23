@@ -11,6 +11,8 @@
 #include <QStandardPaths>
 
 #include "AbstractRelinker.h"
+#include "DefaultParams.h"
+#include "DefaultParamsProvider.h"
 #include "PageSequence.h"
 #include "RelinkablePath.h"
 #include "LeptonicaDetector.h"
@@ -77,7 +79,15 @@ QDomElement Params::toXml(QDomDocument& doc, const QString& name) const {
   return el;
 }
 
-Settings::Settings() = default;
+Settings::Settings() {
+  const DefaultParams::FinalizeParams& defaults = DefaultParamsProvider::getInstance().getParams().getFinalizeParams();
+  m_autoColorModePolicy = defaults.getAutoColorModePolicy();
+  m_autoWhiteBalance = defaults.isAutoWhiteBalanceEnabled();
+  m_midtoneThreshold = defaults.getMidtoneThreshold();
+  m_outputFormat = defaults.getOutputFormat();
+  m_tiffCompression = defaults.getTiffCompression();
+  m_jpegQuality = defaults.getJpegQuality();
+}
 
 Settings::~Settings() = default;
 

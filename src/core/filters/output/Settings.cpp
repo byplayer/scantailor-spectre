@@ -11,6 +11,7 @@
 #include "FillColorProperty.h"
 #include "PictureLayerProperty.h"
 #include "RelinkablePath.h"
+#include "Utils.h"
 
 using namespace core;
 
@@ -89,18 +90,26 @@ Params Settings::getParams(const PageId& pageId) const {
   const auto it(m_perPageParams.find(pageId));
   if (it != m_perPageParams.end()) {
     return it->second;
-  } else {
-    // Return default params with project-level DPI
-    Params params;
-    params.setOutputDpi(m_defaultDpi);
-    return params;
   }
+  return buildSeedParams();
+}
+
+Params Settings::buildSeedParams() const {
+  // Finalize still owns the color mode: it overwrites the one we hand out here
+  // with its own detection unless the user picked a mode by hand.
+  Params params(Utils::buildDefaultParams());
+  if (m_defaultDpiInherited) {
+    // A DPI carried over from a PDF import describes the actual source and
+    // outranks the profile's nominal output DPI.
+    params.setOutputDpi(m_defaultDpi);
+  }
+  return params;
 }
 
 void Settings::setParams(const PageId& pageId, const Params& params) {
   const QMutexLocker locker(&m_mutex);
   qDebug() << "setParams called for page - params being stored externally";
-  Utils::mapSetValue(m_perPageParams, pageId, params);
+  core::Utils::mapSetValue(m_perPageParams, pageId, params);
 }
 
 void Settings::setColorParams(const PageId& pageId, const ColorParams& prms) {
@@ -109,7 +118,7 @@ void Settings::setColorParams(const PageId& pageId, const ColorParams& prms) {
   const auto it(m_perPageParams.find(pageId));
   if (it == m_perPageParams.end()) {
     qDebug() << "setColorParams creating NEW params for page";
-    Params params;
+    Params params(buildSeedParams());
     params.setColorParams(prms);
     m_perPageParams.insert(it, PerPageParams::value_type(pageId, params));
   } else {
@@ -123,7 +132,7 @@ void Settings::setPictureShapeOptions(const PageId& pageId, PictureShapeOptions 
 
   const auto it(m_perPageParams.find(pageId));
   if (it == m_perPageParams.end()) {
-    Params params;
+    Params params(buildSeedParams());
     params.setPictureShapeOptions(pictureShapeOptions);
     m_perPageParams.insert(it, PerPageParams::value_type(pageId, params));
   } else {
@@ -136,7 +145,7 @@ void Settings::setDpi(const PageId& pageId, const Dpi& dpi) {
 
   const auto it(m_perPageParams.find(pageId));
   if (it == m_perPageParams.end()) {
-    Params params;
+    Params params(buildSeedParams());
     params.setOutputDpi(dpi);
     m_perPageParams.insert(it, PerPageParams::value_type(pageId, params));
   } else {
@@ -149,7 +158,7 @@ void Settings::setDewarpingOptions(const PageId& pageId, const DewarpingOptions&
 
   const auto it(m_perPageParams.find(pageId));
   if (it == m_perPageParams.end()) {
-    Params params;
+    Params params(buildSeedParams());
     params.setDewarpingOptions(opt);
     m_perPageParams.insert(it, PerPageParams::value_type(pageId, params));
   } else {
@@ -162,7 +171,7 @@ void Settings::setSplittingOptions(const PageId& pageId, const SplittingOptions&
 
   const auto it(m_perPageParams.find(pageId));
   if (it == m_perPageParams.end()) {
-    Params params;
+    Params params(buildSeedParams());
     params.setSplittingOptions(opt);
     m_perPageParams.insert(it, PerPageParams::value_type(pageId, params));
   } else {
@@ -175,7 +184,7 @@ void Settings::setDistortionModel(const PageId& pageId, const dewarping::Distort
 
   const auto it(m_perPageParams.find(pageId));
   if (it == m_perPageParams.end()) {
-    Params params;
+    Params params(buildSeedParams());
     params.setDistortionModel(model);
     m_perPageParams.insert(it, PerPageParams::value_type(pageId, params));
   } else {
@@ -188,7 +197,7 @@ void Settings::setDepthPerception(const PageId& pageId, const DepthPerception& d
 
   const auto it(m_perPageParams.find(pageId));
   if (it == m_perPageParams.end()) {
-    Params params;
+    Params params(buildSeedParams());
     params.setDepthPerception(depthPerception);
     m_perPageParams.insert(it, PerPageParams::value_type(pageId, params));
   } else {
@@ -201,7 +210,7 @@ void Settings::setDespeckleLevel(const PageId& pageId, double level) {
 
   const auto it(m_perPageParams.find(pageId));
   if (it == m_perPageParams.end()) {
-    Params params;
+    Params params(buildSeedParams());
     params.setDespeckleLevel(level);
     m_perPageParams.insert(it, PerPageParams::value_type(pageId, params));
   } else {
@@ -227,7 +236,7 @@ void Settings::removeOutputParams(const PageId& pageId) {
 
 void Settings::setOutputParams(const PageId& pageId, const OutputParams& params) {
   const QMutexLocker locker(&m_mutex);
-  Utils::mapSetValue(m_perPageOutputParams, pageId, params);
+  core::Utils::mapSetValue(m_perPageOutputParams, pageId, params);
 }
 
 ZoneSet Settings::pictureZonesForPage(const PageId& pageId) const {
@@ -254,12 +263,12 @@ ZoneSet Settings::fillZonesForPage(const PageId& pageId) const {
 
 void Settings::setPictureZones(const PageId& pageId, const ZoneSet& zones) {
   const QMutexLocker locker(&m_mutex);
-  Utils::mapSetValue(m_perPagePictureZones, pageId, zones);
+  core::Utils::mapSetValue(m_perPagePictureZones, pageId, zones);
 }
 
 void Settings::setFillZones(const PageId& pageId, const ZoneSet& zones) {
   const QMutexLocker locker(&m_mutex);
-  Utils::mapSetValue(m_perPageFillZones, pageId, zones);
+  core::Utils::mapSetValue(m_perPageFillZones, pageId, zones);
 }
 
 PropertySet Settings::defaultPictureZoneProperties() const {
@@ -307,7 +316,7 @@ OutputProcessingParams Settings::getOutputProcessingParams(const PageId& pageId)
 
 void Settings::setOutputProcessingParams(const PageId& pageId, const OutputProcessingParams& outputProcessingParams) {
   const QMutexLocker locker(&m_mutex);
-  Utils::mapSetValue(m_perPageOutputProcessingParams, pageId, outputProcessingParams);
+  core::Utils::mapSetValue(m_perPageOutputProcessingParams, pageId, outputProcessingParams);
 }
 
 bool Settings::isParamsNull(const PageId& pageId) const {
@@ -320,7 +329,7 @@ void Settings::setBlackOnWhite(const PageId& pageId, const bool blackOnWhite) {
 
   const auto it(m_perPageParams.find(pageId));
   if (it == m_perPageParams.end()) {
-    Params params;
+    Params params(buildSeedParams());
     params.setBlackOnWhite(blackOnWhite);
     m_perPageParams.insert(it, PerPageParams::value_type(pageId, params));
   } else {

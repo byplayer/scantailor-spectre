@@ -92,6 +92,12 @@ class DefaultParamsDialog : public QDialog, private Ui::DefaultParamsDialog {
 
   void despeckleSliderValueChanged(int value);
 
+  void finalizeOutputFormatChanged(int idx);
+
+  void ocrEnabledToggled(bool checked);
+
+  void exportNoDpiLimitToggled(bool checked);
+
   void profileChanged(int index);
 
   void profileSavePressed();
@@ -107,11 +113,19 @@ class DefaultParamsDialog : public QDialog, private Ui::DefaultParamsDialog {
 
   void updateDeskewDisplay(const DefaultParams::DeskewParams& params);
 
+  void updatePageBoxDisplay(const DefaultParams::PageBoxParams& params);
+
   void updateSelectContentDisplay(const DefaultParams::SelectContentParams& params);
 
   void updatePageLayoutDisplay(const DefaultParams::PageLayoutParams& params);
 
   void updateOutputDisplay(const DefaultParams::OutputParams& params);
+
+  void updateFinalizeDisplay(const DefaultParams::FinalizeParams& params);
+
+  void updateOcrDisplay(const DefaultParams::OcrParams& params);
+
+  void updateExportDisplay(const DefaultParams::ExportParams& params);
 
   void updateUnits(Units units);
 

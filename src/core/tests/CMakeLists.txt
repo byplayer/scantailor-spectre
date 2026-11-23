@@ -4,6 +4,7 @@ set(sources
     TestBatchProcessingContext.cpp
     TestColorDetection.cpp
     TestContentSpanFinder.cpp
+    TestDefaultParamsProfile.cpp
     TestDurationFormatter.cpp
     TestOcrResult.cpp
     TestPageLayoutOutput.cpp

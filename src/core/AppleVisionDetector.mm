@@ -12,6 +12,7 @@
 #import <AppKit/AppKit.h>
 #import <objc/message.h>
 #include <dlfcn.h>
+#include <mutex>
 #include <QImageReader>
 #include <QElapsedTimer>
 
@@ -101,17 +102,40 @@ VNRequestTextRecognitionLevel textRecognitionLevel(const bool accurate) API_AVAI
                                                     : VNRequestTextRecognitionLevelFast;
 }
 
-// Perform Vision request synchronously
+// Perform Vision request synchronously.
+//
+// Text recognition fails now and then without anything being wrong with the
+// image. While Vision is loading its model - which took close to a minute the
+// first time after an update - requests that arrive together get
+// CRImageReaderError 1, page after page, while one request at a time waits for
+// the model and succeeds. A failed request is therefore retried one at a time
+// instead of letting the page silently go without OCR text (and so without its
+// OCR label), or without the text evidence deskew and content detection use.
+NSError* runVisionRequest(VNRequest* request, CGImageRef cgImage) {
+  VNImageRequestHandler* handler = [[VNImageRequestHandler alloc]
+      initWithCGImage:cgImage
+              options:@{}];
+  NSError* error = nil;
+  [handler performRequests:@[request] error:&error];
+  return error;
+}
+
 NSArray* performVisionRequest(VNRequest* request, CGImageRef cgImage, bool* success = nullptr) {
   if (success) {
     *success = false;
   }
-  VNImageRequestHandler* handler = [[VNImageRequestHandler alloc]
-      initWithCGImage:cgImage
-              options:@{}];
 
-  NSError* error = nil;
-  [handler performRequests:@[request] error:&error];
+  NSError* error = runVisionRequest(request, cgImage);
+  if (error) {
+    static std::mutex retryMutex;
+    const std::lock_guard<std::mutex> lock(retryMutex);
+    constexpr int kRetries = 2;
+    for (int retry = 1; error && retry <= kRetries; ++retry) {
+      NSLog(@"Vision request failed, retrying alone (%d of %d): %@", retry, kRetries,
+            error.localizedDescription);
+      error = runVisionRequest(request, cgImage);
+    }
+  }
 
   if (error) {
     NSLog(@"Vision request failed: %@", error.localizedDescription);

@@ -85,7 +85,7 @@ class CliRunner : public QObject {
   void start();
 
  private:
-  void onProjectLoaded();
+  void startProcessing();
   void onAutoProcessFinished(bool completed);
   bool applyProfile(QString* errorMessage);
   AutoProcessOptions buildAutoProcessOptions() const;
@@ -95,7 +95,6 @@ class CliRunner : public QObject {
 
   Options m_options;
   QPointer<MainWindow> m_window;
-  bool m_projectLoadHandled = false;
   bool m_autoProcessHandled = false;
 };
 

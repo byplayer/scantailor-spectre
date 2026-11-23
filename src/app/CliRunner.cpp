@@ -318,13 +318,13 @@ void CliRunner::start() {
   m_window = new MainWindow(/*restoreGeometry=*/false);
   m_window->setAttribute(Qt::WA_DeleteOnClose, false);
   m_window->setHeadless(true);
-  connect(m_window, &MainWindow::projectLoaded, this, &CliRunner::onProjectLoaded);
   connect(m_window, &MainWindow::autoProcessFinished, this, &CliRunner::onAutoProcessFinished);
 
   report(tr("Loading %1").arg(m_options.input));
   if (!loadInput(&errorMessage)) {
     finish(EXIT_FAILURE, errorMessage);
   }
+  startProcessing();
 }
 
 /**
@@ -519,13 +519,15 @@ bool CliRunner::loadImageFolder(const QString& folder, QString* errorMessage) {
   return true;
 }
 
-void CliRunner::onProjectLoaded() {
-  if (m_projectLoadHandled) {
-    // Saving a project to a folder reloads it; process it only once.
-    return;
-  }
-  m_projectLoadHandled = true;
-
+/**
+ * \brief Runs the auto process over the project loadInput() built.
+ *
+ * This waits for loadInput() to return rather than reacting to projectLoaded:
+ * a PDF import emits that signal, then saves the project (which pumps the event
+ * loop) and reopens it. Starting on the first signal let the run begin before
+ * the reopen, which stopped it again and failed every PDF conversion.
+ */
+void CliRunner::startProcessing() {
   report(tr("Processing %1 page(s)").arg(static_cast<int>(m_window->allPages().numPages())));
   const AutoProcessOptions autoOptions = buildAutoProcessOptions();
   // Let the window settle into the loaded project before driving it.
